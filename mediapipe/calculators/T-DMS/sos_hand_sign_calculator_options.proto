@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message SOSHandSignCalculatorOptions {
+  required bool verbose = 1;
+  required float max_transform_duration_s_threshold = 2 [default = 0.5]; 
+  required float min_keep_duration_s_threshold = 3 [default = 0.5];
+}

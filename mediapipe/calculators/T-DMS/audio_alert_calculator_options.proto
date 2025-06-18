@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message AudioAlertCalculatorOptions {
+    required string audio_path = 1 [default = "/home/nextwave/Downloads/alert.wav"];
+    required int32 play_duration_s = 2 [default = -1]; // in seconds
+    required int32 cool_duration_s = 3 [default = 1]; // in seconds
+}

@@ -1,0 +1,47 @@
+input_stream: "input_image"
+output_stream: "output_image"
+
+node: {
+  calculator: "ConstantSidePacketCalculator"
+  output_side_packet: "PACKET:num_faces"
+  node_options: {
+    [type.googleapis.com/mediapipe.ConstantSidePacketCalculatorOptions]: {
+      packet { int_value: 1 }
+    }
+  }
+}
+node: {
+  calculator: "FaceLandmarkFrontCpu"
+  input_stream: "IMAGE:input_image"
+  input_side_packet: "NUM_FACES:num_faces"
+  output_stream: "LANDMARKS:multi_face_landmarks"
+  output_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks"
+  output_stream: "DETECTIONS:face_detections"
+  output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections"
+}
+
+node: {
+  calculator: "YawnCalculator"
+  input_stream: "MULTI_LANDMARKS:multi_face_landmarks"
+  output_stream: "YAWN:yawn"
+  node_options: {
+    [type.googleapis.com/mediapipe.YawnCalculatorOptions]: {
+      mar_threshold: 1
+      verbose: true
+      duration_s_threshold: 1
+    }
+  }
+}
+
+node: {
+  calculator: "FaceLandmarksToRenderIndexDataCalculator"
+  input_stream: "LANDMARKS:multi_face_landmarks"
+  output_stream: "RENDER_DATA:face_landmarks_render_data"
+}
+
+node: {
+  calculator: "AnnotationOverlayCalculator"
+  input_stream: "IMAGE:input_image"
+  input_stream: "face_landmarks_render_data"
+  output_stream: "IMAGE:output_image"
+}

@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message LatencyCalculatorOptions {
+    required string label = 1 [default = ""];
+    required bool verbose = 2 [default = false];
+}

@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message YawnCalculatorOptions {
+    required float mar_threshold = 1 [default = 0.2];
+    required bool verbose = 2 [default = false];
+    required float duration_s_threshold = 3 [default = 1]; // in seconds
+}

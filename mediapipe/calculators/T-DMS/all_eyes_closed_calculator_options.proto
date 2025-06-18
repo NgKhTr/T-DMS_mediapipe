@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message AllEyesClosedCalculatorOptions {
+    required float ear_threshold = 1 [default = 0.2];
+    required bool verbose = 2 [default = false];
+    required float duration_s_threshold = 3 [default = 1.5]; // // Duration in seconds to consider the eye closed
+}

@@ -1,0 +1,24 @@
+input_stream: "in0"
+input_stream: "in1"
+output_stream: "out"
+node {
+    calculator: "PassThroughCalculator"
+    input_stream: "in0"
+    output_stream: "out0_0"
+}
+node {
+    calculator: "PassThroughCalculator"
+    input_stream: "in1"
+    output_stream: "out0_1"
+}
+node {
+    calculator: "MaxCalculator"
+    input_stream: "out0_0"
+    input_stream: "out0_1"
+    output_stream: "out1"
+}
+node {
+    calculator: "PassThroughCalculator"
+    input_stream: "out1"
+    output_stream: "out"
+}

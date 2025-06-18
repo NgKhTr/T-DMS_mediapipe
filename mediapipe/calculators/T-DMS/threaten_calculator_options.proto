@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message ThreatenCalculatorOptions {
+    repeated string labels = 1; // Threaten object
+    required bool verbose = 2 [default = false];
+    required float face_margin_top_ratio = 4 [default = 1];
+    required float face_margin_left_ratio = 5 [default = 0.5];
+    required float face_margin_right_ratio = 6 [default = 0.5];
+    required float face_margin_bottom_ratio = 7 [default = 0.5];
+}

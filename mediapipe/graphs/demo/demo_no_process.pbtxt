@@ -1,0 +1,7 @@
+input_stream: "input_video"
+output_stream: "output_video"
+node {
+    calculator: "PassThroughCalculator"
+    input_stream: "input_video"
+    output_stream: "output_video"
+}

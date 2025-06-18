@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message HandHoldObjectCalculatorOptions {
+    required float duration_s_threshold = 1 [default = 1];
+    required bool verbose = 2 [default = false];
+    required string label = 3;
+}

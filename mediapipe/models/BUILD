@@ -38,5 +38,9 @@ mediapipe_files(
         "object_detection_saved_model/saved_model.pb",
         "ssdlite_object_detection.tflite",
         "ssdlite_object_detection_labelmap.txt",
+
+        "labelmap.txt",
+        "efficientdet_lite0_fp16_no_nms_anchors.csv",
+        "efficientdet_lite0_fp16_no_nms.tflite",
     ],
 )
