@@ -68,7 +68,7 @@ private:
     }
     bool IsIndexFingerStraight(const NormalizedLandmarkList& hand_landmarks) {
         return ! IsPointOnTheSameSide(hand_landmarks.landmark(8), hand_landmarks.landmark(6), hand_landmarks.landmark(0));
-    }
+    } 
     bool IsMiddleFingerStraight(const NormalizedLandmarkList& hand_landmarks) {
         return ! IsPointOnTheSameSide(hand_landmarks.landmark(12), hand_landmarks.landmark(10), hand_landmarks.landmark(0));
     }
@@ -168,12 +168,12 @@ public:
                 if (duration < max_transform_duration_s_threshold_) {
                     if (!cc->Inputs().Tag("LANDMARKS").IsEmpty()) {
                         const auto& hand_landmarks_vec = cc->Inputs().Tag("LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
-                        if (IsSign1(hand_landmarks_vec)) {
-                            start_time_ = std::chrono::steady_clock::now();
-                        } else if (IsSign2(hand_landmarks_vec)) {
+                        if (IsSign2(hand_landmarks_vec)) {
                             recent_sign_ = SignStatus::SIGN2;
                             start_time_ = std::chrono::steady_clock::now();
                             recent_state_ = State::KEEPING;
+                        } else if (IsSign1(hand_landmarks_vec)) {
+                            start_time_ = std::chrono::steady_clock::now();
                         }
                     }
                 } else {
@@ -203,12 +203,12 @@ public:
                 if (duration < max_transform_duration_s_threshold_) {
                     if (!cc->Inputs().Tag("LANDMARKS").IsEmpty()) {
                         const auto& hand_landmarks_vec = cc->Inputs().Tag("LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
-                        if (IsSign2(hand_landmarks_vec)) {
-                            start_time_ = std::chrono::steady_clock::now();
-                        } else if (IsSign3(hand_landmarks_vec)) {
+                        if (IsSign3(hand_landmarks_vec)) {
                             recent_sign_ = SignStatus::SIGN3;
                             start_time_ = std::chrono::steady_clock::now();
                             recent_state_ = State::KEEPING;
+                        } else if (IsSign2(hand_landmarks_vec)) {
+                            start_time_ = std::chrono::steady_clock::now();
                         }
                     }
                 } else {
@@ -259,7 +259,7 @@ public:
                 }
 
             }
-            LOG(INFO) << "recent_sign_ " << static_cast<int>(recent_sign_) << ", isSOS: " << isSOS;
+            LOG(INFO) << "recent_sign_: " << static_cast<int>(recent_sign_) << ", recent_state_: " << static_cast<int>(recent_state_) << ", isSOS: " << isSOS;
         }
         return absl::OkStatus();
     }
