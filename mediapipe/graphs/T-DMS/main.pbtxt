@@ -149,6 +149,22 @@ node: {
     }
   }
 }
+# Gaze calculator
+node: {
+  calculator: "GazeCalculator"
+  input_stream: "LEFT_IRIS_LANDMARKS:left_iris_landmarks"
+  input_stream: "RIGHT_IRIS_LANDMARKS:right_iris_landmarks"
+  input_stream: "IMAGE_GPU:input_video_ltc"
+  input_stream: "FACE_LANDMARKS:face_landmarks"
+  output_stream: "GAZE_RENDER_DATA:gaze_render_data"
+  output_stream: "LEFT_GAZE_DIRECTION:left_gaze_direction"
+  output_stream: "RIGHT_GAZE_DIRECTION:right_gaze_direction"
+  node_options: {
+    [type.googleapis.com/mediapipe.GazeCalculatorOptions]: {
+      verbose: true
+    }
+  }
+}
 
 # Hand tracking
 node: {
@@ -327,6 +343,7 @@ node: {
   calculator: "AnnotationOverlayCalculator"
   input_stream: "IMAGE_GPU:output_image_2"
   input_stream: "face_margin_detections_render_data"
+  input_stream: "gaze_render_data"
   output_stream: "IMAGE_GPU:output_image_3"
 }
 node: {

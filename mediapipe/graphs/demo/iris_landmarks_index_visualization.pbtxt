@@ -1,0 +1,60 @@
+input_stream: "input_image"
+output_stream: "output_image"
+
+node: {
+  calculator: "ConstantSidePacketCalculator"
+  output_side_packet: "PACKET:num_faces"
+  node_options: {
+    [type.googleapis.com/mediapipe.ConstantSidePacketCalculatorOptions]: {
+      packet { int_value: 1 }
+    }
+  }
+}
+node: {
+  calculator: "FaceLandmarkFrontGpu"
+  input_stream: "IMAGE:input_image"
+  input_side_packet: "NUM_FACES:num_faces"
+  output_stream: "LANDMARKS:multi_face_landmarks"
+  output_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks"
+  output_stream: "DETECTIONS:face_detections"
+  output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections"
+}
+
+# Iris
+# Gets the very first and only face from "multi_face_landmarks" vector.
+node: {
+  calculator: "SplitNormalizedLandmarkListVectorCalculator"
+  input_stream: "multi_face_landmarks"
+  output_stream: "face_landmarks"
+  node_options: {
+    [type.googleapis.com/mediapipe.SplitVectorCalculatorOptions] {
+      ranges: { begin: 0 end: 1 }
+      element_only: true
+    }
+  }
+}
+node: {
+  calculator: "IrisLandmarksSubgraph"
+  input_stream: "FACE_LANDMARKS:face_landmarks"
+  input_stream: "IMAGE_GPU:input_image"
+  output_stream: "LEFT_EYE_CONTOUR_LANDMARKS:left_eye_contour_landmarks"
+  output_stream: "LEFT_EYE_IRIS_LANDMARKS:left_iris_landmarks"
+  output_stream: "LEFT_EYE_ROI:left_eye_rect_from_landmarks"
+  output_stream: "RIGHT_EYE_CONTOUR_LANDMARKS:right_eye_contour_landmarks"
+  output_stream: "RIGHT_EYE_IRIS_LANDMARKS:right_iris_landmarks"
+  output_stream: "RIGHT_EYE_ROI:right_eye_rect_from_landmarks"
+}
+
+node: {
+  calculator: "IrisLandmarksToRenderDataCalculator"
+  input_stream: "LEFT_IRIS_LANDMARKS:left_iris_landmarks"
+  input_stream: "RIGHT_IRIS_LANDMARKS:right_iris_landmarks"
+  output_stream: "RENDER_DATA:iris_landmarks_render_data"
+}
+
+node: {
+  calculator: "AnnotationOverlayCalculator"
+  input_stream: "IMAGE_GPU:input_image"
+  input_stream: "iris_landmarks_render_data"
+  output_stream: "IMAGE_GPU:output_image"
+}

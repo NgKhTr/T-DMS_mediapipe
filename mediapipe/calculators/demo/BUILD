@@ -85,3 +85,20 @@ cc_library(
     alwayslink = 1, 
     # must add
 )
+
+cc_library(
+    name = "iris_landmarks_to_render_data_calculator",
+    srcs = [
+        "iris_landmarks_to_render_data_calculator.cc",
+    ],
+    deps = [
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/framework/formats:landmark_cc_proto", # for landmark.pb.h
+        "//mediapipe/util:render_data_cc_proto", # for render_data.pb.h
+    ],
+    alwayslink = 1, 
+    # must add
+)

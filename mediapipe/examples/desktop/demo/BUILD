@@ -220,6 +220,7 @@ cc_binary(
         "//mediapipe/graphs/T-DMS/subgraphs:iris_landmarks_subgraph",
 
         "//mediapipe/calculators/demo:eye_contour_landmarks_to_render_data_calculator", # Render for dev
+        "//mediapipe/calculators/demo:iris_landmarks_to_render_data_calculator", # Render for dev
 
         "//mediapipe/graphs/T-DMS/subgraphs:iris_and_face_landmarks_render_subgraph",
         # Object detection

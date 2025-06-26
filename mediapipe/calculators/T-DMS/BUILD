@@ -1,4 +1,4 @@
-load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library")
+load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -208,4 +208,34 @@ cc_library(
         "//mediapipe/framework/formats:detection_cc_proto",
     ],
     alwayslink = 1,
+)
+
+mediapipe_cc_proto_library(
+    name = "gaze_calculator_options",
+    srcs = ["gaze_calculator_options.proto"],
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+        "//mediapipe/util:color_cc_proto",
+    ],
+)
+cc_library(
+    name = "gaze_calculator",
+    srcs = [
+        "gaze_calculator.cc",
+    ],
+    deps = [
+        ":gaze_calculator_options",
+        "//mediapipe/framework/port:opencv_highgui",
+        "//mediapipe/framework/port:opencv_imgproc",
+        "//mediapipe/framework/port:opencv_calib3d",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/framework/formats:landmark_cc_proto", # for landmark.pb.h
+        "//mediapipe/util:render_data_cc_proto",
+        "//mediapipe/gpu:gpu_buffer",
+    ],
+    alwayslink = 1, 
+    # must add
 )

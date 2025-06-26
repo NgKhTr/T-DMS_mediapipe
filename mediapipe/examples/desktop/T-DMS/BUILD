@@ -57,6 +57,8 @@ cc_binary(
         "//mediapipe/calculators/T-DMS:all_eyes_closed_calculator",
 
         "//mediapipe/graphs/T-DMS/subgraphs:iris_and_face_landmarks_render_subgraph",
+
+        "//mediapipe/calculators/T-DMS:gaze_calculator",
         # Object detection
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_ssd_subgraph",
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_efficient_det_subgraph",

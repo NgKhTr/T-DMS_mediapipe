@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package mediapipe;
+
+import "mediapipe/util/color.proto";
+
+message GazeCalculatorOptions {
+    required bool verbose = 1 [default = false];
+    optional double thickness = 2 [default = 1.0];
+    optional Color color = 3;
+}

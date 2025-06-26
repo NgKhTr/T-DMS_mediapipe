@@ -46,7 +46,7 @@ public:
 		return absl::OkStatus();
 	}
 	absl::Status Open(CalculatorContext* cc) override {
-		const auto& opts = cc->Options<mediapipe::AllEyesClosedCalculatorOptions>();
+		const auto& opts = cc->Options<AllEyesClosedCalculatorOptions>();
 		ear_threshold_ = opts.ear_threshold();
 		verbose_ = opts.verbose();
 		duration_s_threshold_ = opts.duration_s_threshold();
