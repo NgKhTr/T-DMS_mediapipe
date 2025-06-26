@@ -162,6 +162,8 @@ node: {
   node_options: {
     [type.googleapis.com/mediapipe.GazeCalculatorOptions]: {
       verbose: true
+      color: { r: 0 g: 255 b: 0 }
+      thickness: 4.0
     }
   }
 }

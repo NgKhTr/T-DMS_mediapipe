@@ -1,4 +1,4 @@
-load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
+load("//mediapipe/framework/port:build_config.bzl", "mediapipe_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -18,10 +18,9 @@ cc_library(
     # must add
 )
 
-mediapipe_cc_proto_library(
-    name = "latency_calculator_options",
+mediapipe_proto_library(
+    name = "latency_calculator_options_proto",
     srcs = ["latency_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 
 cc_library(
@@ -30,7 +29,7 @@ cc_library(
         "latency_calculator.cc",
     ],
     deps = [
-        ":latency_calculator_options",
+        ":latency_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -40,10 +39,9 @@ cc_library(
     # must add
 )
 
-mediapipe_cc_proto_library(
-    name = "all_eyes_closed_calculator_options",
+mediapipe_proto_library(
+    name = "all_eyes_closed_calculator_options_proto",
     srcs = ["all_eyes_closed_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 
 cc_library(
@@ -52,7 +50,7 @@ cc_library(
         "all_eyes_closed_calculator.cc",
     ],
     deps = [
-        ":all_eyes_closed_calculator_options",
+        ":all_eyes_closed_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -74,10 +72,9 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
-mediapipe_cc_proto_library(
-    name = "audio_alert_calculator_options",
+mediapipe_proto_library(
+    name = "audio_alert_calculator_options_proto",
     srcs = ["audio_alert_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 
 
@@ -87,7 +84,7 @@ cc_library(
         "audio_alert_calculator.cc",
     ],
     deps = [
-        ":audio_alert_calculator_options",
+        ":audio_alert_calculator_options_cc_proto",
         ":sfml",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
@@ -99,10 +96,9 @@ cc_library(
     # must add
 )
 
-mediapipe_cc_proto_library(
-    name = "sos_hand_sign_calculator_options",
+mediapipe_proto_library(
+    name = "sos_hand_sign_calculator_options_proto",
     srcs = ["sos_hand_sign_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 
 cc_library(
@@ -111,7 +107,7 @@ cc_library(
         "sos_hand_sign_calculator.cc",
     ],
     deps = [
-        ":sos_hand_sign_calculator_options",
+        ":sos_hand_sign_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -121,10 +117,9 @@ cc_library(
     alwayslink = 1, 
 )
 
-mediapipe_cc_proto_library(
-    name = "hand_hold_object_calculator_options",
+mediapipe_proto_library(
+    name = "hand_hold_object_calculator_options_proto",
     srcs = ["hand_hold_object_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 cc_library(
     name = "hand_hold_object_calculator",
@@ -132,7 +127,7 @@ cc_library(
         "hand_hold_object_calculator.cc",
     ],
     deps = [
-        ":hand_hold_object_calculator_options",
+        ":hand_hold_object_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -144,10 +139,9 @@ cc_library(
     alwayslink = 1, 
 )
 
-mediapipe_cc_proto_library(
-    name = "anchor_csv_side_packet_calculator_options",
+mediapipe_proto_library(
+    name = "anchor_csv_side_packet_calculator_options_proto",
     srcs = ["anchor_csv_side_packet_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 cc_library(
     name = "anchor_csv_side_packet_calculator",
@@ -155,7 +149,7 @@ cc_library(
         "anchor_csv_side_packet_calculator.cc",
     ],
     deps = [
-        ":anchor_csv_side_packet_calculator_options",
+        ":anchor_csv_side_packet_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -166,10 +160,9 @@ cc_library(
     alwayslink = 1,
 )
 
-mediapipe_cc_proto_library(
-    name = "yawn_calculator_options",
+mediapipe_proto_library(
+    name = "yawn_calculator_options_proto",
     srcs = ["yawn_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 cc_library(
     name = "yawn_calculator",
@@ -177,7 +170,7 @@ cc_library(
         "yawn_calculator.cc",
     ],
     deps = [
-        ":yawn_calculator_options",
+        ":yawn_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -188,10 +181,9 @@ cc_library(
     alwayslink = 1, 
 )
 
-mediapipe_cc_proto_library(
-    name = "threaten_calculator_options",
+mediapipe_proto_library(
+    name = "threaten_calculator_options_proto",
     srcs = ["threaten_calculator_options.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 cc_library(
     name = "threaten_calculator",
@@ -199,7 +191,7 @@ cc_library(
         "threaten_calculator.cc",
     ],
     deps = [
-        ":threaten_calculator_options",
+        ":threaten_calculator_options_cc_proto",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -210,12 +202,11 @@ cc_library(
     alwayslink = 1,
 )
 
-mediapipe_cc_proto_library(
-    name = "gaze_calculator_options",
+mediapipe_proto_library(
+    name = "gaze_calculator_options_proto",
     srcs = ["gaze_calculator_options.proto"],
     deps = [
-        "@com_google_protobuf//:descriptor_proto",
-        "//mediapipe/util:color_cc_proto",
+        "//mediapipe/util:color_proto",
     ],
 )
 cc_library(
@@ -224,7 +215,7 @@ cc_library(
         "gaze_calculator.cc",
     ],
     deps = [
-        ":gaze_calculator_options",
+        ":gaze_calculator_options_cc_proto",
         "//mediapipe/framework/port:opencv_highgui",
         "//mediapipe/framework/port:opencv_imgproc",
         "//mediapipe/framework/port:opencv_calib3d",
