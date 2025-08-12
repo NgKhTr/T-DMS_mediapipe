@@ -1,0 +1,5 @@
+{
+    "alarm": true,
+    "detail": "SOS detected",
+    "type": "DeviceAlarm"
+}
