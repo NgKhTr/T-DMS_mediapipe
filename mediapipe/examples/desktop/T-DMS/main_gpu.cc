@@ -15,6 +15,8 @@
 // An example of sending OpenCV webcam frames into a MediaPipe graph.
 // This example requires a linux computer and a GPU with EGL support drivers.
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -33,10 +35,12 @@
 #include "mediapipe/gpu/gpu_shared_data_internal.h"
 #include "mediapipe/util/resource_util.h"
 
+
 constexpr char kInputStream[] = "input_video";
 constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
-
+const auto warm_up_phase_duration = std::chrono::seconds(10);
+const auto stopped_phase_duration = std::chrono::seconds(5);
 ABSL_FLAG(std::string, calculator_graph_config_file, "",
           "Name of file containing text format CalculatorGraphConfig proto.");
 ABSL_FLAG(std::string, input_video_path, "",
@@ -70,15 +74,14 @@ absl::Status RunMPPGraph() {
 	ABSL_LOG(INFO) << "Initialize the camera or load the video.";
 
 	// !!! need fix for video input
-	std::string pipeline = "v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec ! videoconvert ! appsink";
-	cv::VideoCapture capture(pipeline, cv::CAP_GSTREAMER);
-	// cv::VideoCapture capture;
+	cv::VideoCapture capture;
 	const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
-	// if (load_video) {
-	//   capture.open(absl::GetFlag(FLAGS_input_video_path));
-	// } else {
-	//   capture.open(0);
-	// }
+	if (load_video) {
+	  	capture.open(absl::GetFlag(FLAGS_input_video_path));
+	} else {
+		std::string pipeline = "v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec ! videoconvert ! appsink";
+		capture.open(pipeline, cv::CAP_GSTREAMER);
+	}
 	RET_CHECK(capture.isOpened());
 
 	cv::VideoWriter writer;
@@ -89,7 +92,7 @@ absl::Status RunMPPGraph() {
 	int  w   = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_WIDTH));
 	int  h   = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_HEIGHT));
 	double fps =       capture.get(cv::CAP_PROP_FPS);
-	std::cout << "Opened at " << w << "×" << h << " @" << fps << " FPS\n";
+	ABSL_LOG(INFO) << "Opened at " << w << "x" << h << " @" << fps << " FPS\n";
 	ABSL_LOG(INFO) << "Start running the calculator graph.";
 
 	// --------- Callback for rendering ---------
@@ -117,43 +120,63 @@ absl::Status RunMPPGraph() {
 
 			cv::Mat output_frame_mat = mediapipe::formats::MatView(output_frame.get());
 			if (output_frame_mat.channels() == 4)
-			cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGBA2BGR);
+				cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGBA2BGR);
 			else
-			cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+				cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
 
 			if (save_video) {
-			if (!writer.isOpened()) {
-				writer.open(absl::GetFlag(FLAGS_output_video_path),
-							mediapipe::fourcc('a', 'v', 'c', '1'),
-							30, // You may want to use actual FPS
-							output_frame_mat.size());
-				RET_CHECK(writer.isOpened());
-			}
-			writer.write(output_frame_mat);
+				if (!writer.isOpened()) {
+					writer.open(absl::GetFlag(FLAGS_output_video_path),
+								mediapipe::fourcc('a', 'v', 'c', '1'),
+								30, // You may want to use actual FPS
+								output_frame_mat.size());
+					RET_CHECK(writer.isOpened());
+				}
+				writer.write(output_frame_mat);
 			} else {
-			cv::imshow(kWindowName, output_frame_mat);
-			const int pressed_key = cv::waitKey(5);
-			if (pressed_key >= 0 && pressed_key != 255) {
-				// Optionally set a flag to stop the main loop
-			}
+				// cv::resize(output_frame_mat, output_frame_mat, cv::Size(output_frame_mat.cols * 0.5, output_frame_mat.rows * 0.5));
+				cv::imshow(kWindowName, output_frame_mat);
+				const int pressed_key = cv::waitKey(5);
+				if (pressed_key >= 0 && pressed_key != 255) {
+					// Optionally set a flag to stop the main loop
+				}
 			}
 			return absl::OkStatus();
 		}));
 
 	MP_RETURN_IF_ERROR(graph.StartRun({}));
 	ABSL_LOG(INFO) << "Start grabbing and processing frames.";
-	bool grab_frames = true;
-	while (grab_frames) {
+
+	int ms_delay = static_cast<int>(1000.0 / fps); // milliseconds per frame
+	const auto frame_duration = std::chrono::milliseconds(ms_delay);
+    auto next_frame_time = std::chrono::steady_clock::now();
+	auto end_phase_time = next_frame_time + warm_up_phase_duration;
+
+	enum class Phase {
+		WARM_UP,
+		RUNNING,
+		STOPPED
+	};
+	Phase current_phase = Phase::WARM_UP;
+	while (true) {
 		// Capture opencv camera or video frame.
 		cv::Mat camera_frame_raw;
-		capture >> camera_frame_raw;
-		if (camera_frame_raw.empty()) {
-			if (!load_video) {
-				// ABSL_LOG(INFO) << "Ignore empty frames from camera.";
-				continue;
+		if (current_phase == Phase::WARM_UP) {
+			camera_frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
+		} else if (current_phase == Phase::RUNNING) {
+			capture >> camera_frame_raw;
+
+			if (camera_frame_raw.empty()) {
+				if (!load_video) {
+					// ABSL_LOG(INFO) << "Ignore empty frames from camera.";
+					continue;
+				}
+				current_phase = Phase::STOPPED;
+				end_phase_time = next_frame_time + stopped_phase_duration;
+				camera_frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
 			}
-			ABSL_LOG(INFO) << "Empty frame, end of video reached.";
-			break;
+		} else if (current_phase == Phase::STOPPED) {
+			camera_frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
 		}
 		cv::Mat camera_frame;
 		cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGBA);
@@ -185,9 +208,20 @@ absl::Status RunMPPGraph() {
 									.At(mediapipe::Timestamp(frame_timestamp_us))));
 			return absl::OkStatus();
 		}));
+
+
+		next_frame_time += frame_duration;
+        std::this_thread::sleep_until(next_frame_time);
+		if (current_phase == Phase::WARM_UP && next_frame_time >= end_phase_time) {
+			current_phase = Phase::RUNNING;
+		} else if (current_phase == Phase::STOPPED && next_frame_time >= end_phase_time) {
+			break;
+		}
+
 		const int pressed_key = cv::waitKey(5);
 		if (pressed_key >= 0 && pressed_key != 255) {
-			grab_frames = false;
+			current_phase = Phase::STOPPED;
+			end_phase_time = next_frame_time + stopped_phase_duration;
 		}
 	}
 
