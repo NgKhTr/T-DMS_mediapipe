@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message CoolingCalculatorOptions {
+  optional bool verbose = 1 [default = false];
+  optional int32 cool_duration_s = 2 [default = 30]; // in seconds
+}
