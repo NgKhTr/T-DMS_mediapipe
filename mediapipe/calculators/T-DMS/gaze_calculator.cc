@@ -41,11 +41,11 @@ public:
     }
 
     absl::Status Open(CalculatorContext* cc) override {
+        cc->SetOffset(TimestampDiff(0));
         const auto& opts = cc->Options<GazeCalculatorOptions>();
         verbose_ = opts.verbose();
         color_ = opts.color();
         thickness_ = opts.thickness();
-        cc->SetOffset(TimestampDiff(0));
         return absl::OkStatus();
     }
 
@@ -63,7 +63,6 @@ public:
         const GpuBuffer& gpu_buffer = cc->Inputs().Tag("IMAGE_GPU").Get<GpuBuffer>();
         const int width = gpu_buffer.width(),
             height = gpu_buffer.height();
-        LOG(INFO) << "FACE_LANDMARKS: " << face_landmarks.landmark_size();
         // === CONVERT LANDMARKS ===
         const int nose_index = 4, chin_index = 152,
             left_eye_index = 263, right_eye_index = 33,

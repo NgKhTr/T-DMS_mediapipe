@@ -128,13 +128,13 @@ public:
         return absl::OkStatus();
     }
     absl::Status Open(CalculatorContext* cc) override {
+        cc->SetOffset(TimestampDiff(0));
         const auto& opts = cc->Options<mediapipe::SOSHandSignCalculatorOptions>();
         max_transform_duration_s_threshold_ = opts.max_transform_duration_s_threshold();
         min_keep_duration_s_threshold_ = opts.min_keep_duration_s_threshold();
         verbose_ = opts.verbose();
         recent_sign_ = SignStatus::INITIAL;
         recent_state_ = State::INITIAL;
-        cc->SetOffset(TimestampDiff(0));
         return absl::OkStatus();
     }
     absl::Status Process(CalculatorContext* cc) override {
@@ -250,7 +250,7 @@ public:
                 auto& landmarks = cc->Inputs().Tag("LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
                 for (int8_t i = 0; i < landmarks.size(); ++i) {
                     const auto& hand_landmarks = landmarks[i];
-                    LOG(INFO) << "Hand " << i << " is straight: " <<
+                    LOG(INFO) << "Hand " << static_cast<int>(i) << " is straight: " <<
                         IsThumbStraight(hand_landmarks) << " + " <<
                         IsIndexFingerStraight(hand_landmarks) << " | " << 
                         IsMiddleFingerStraight(hand_landmarks) << " | " <<

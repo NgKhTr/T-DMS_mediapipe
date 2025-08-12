@@ -56,12 +56,12 @@ public:
         return absl::OkStatus();
     }
     absl::Status Open(CalculatorContext* cc) override {
+        cc->SetOffset(TimestampDiff(0));
         const auto& opts = cc->Options<mediapipe::HandHoldObjectCalculatorOptions>();
         duration_s_threshold_ = opts.duration_s_threshold();
         verbose_ = opts.verbose();
         label_ = opts.label();
         timer_started_ = false;
-        cc->SetOffset(TimestampDiff(0));
         return absl::OkStatus();
     }
     absl::Status Process(CalculatorContext* cc) override {

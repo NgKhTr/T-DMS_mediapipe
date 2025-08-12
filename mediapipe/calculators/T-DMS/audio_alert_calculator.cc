@@ -91,6 +91,7 @@ public:
     }
 
     absl::Status Open(CalculatorContext* cc) override {
+		cc->SetOffset(TimestampDiff(0));
         const auto& opts = cc->Options<mediapipe::AudioAlertCalculatorOptions>();
         audio_path_ = opts.audio_path();
         play_duration_s_ = opts.play_duration_s();

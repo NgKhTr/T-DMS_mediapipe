@@ -107,6 +107,7 @@ public:
         return absl::OkStatus();
     }
     absl::Status Open(CalculatorContext* cc) override {
+        cc->SetOffset(TimestampDiff(0));
         const auto& opts = cc->Options<ThreatenCalculatorOptions>();
         
         verbose_ = opts.verbose();
@@ -116,7 +117,6 @@ public:
         face_margin_right_ratio_ = opts.face_margin_right_ratio();
         face_margin_bottom_ratio_ = opts.face_margin_bottom_ratio();
 
-        cc->SetOffset(TimestampDiff(0));
         return absl::OkStatus();
     }
     absl::Status Process(CalculatorContext* cc) override {

@@ -29,6 +29,7 @@ public:
 		return OkStatus();
 	}
 	absl::Status Open(CalculatorContext* cc) override {
+        cc->SetOffset(TimestampDiff(0));
   		const auto& opts = cc->Options<mediapipe::LatencyCalculatorOptions>();
 		label_ = opts.label();
 		verbose_ = opts.verbose();
