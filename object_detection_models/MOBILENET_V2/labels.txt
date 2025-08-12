@@ -1,0 +1,6 @@
+background
+drink
+gun
+knife
+person
+smartphone

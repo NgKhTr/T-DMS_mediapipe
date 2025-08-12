@@ -1,0 +1,120 @@
+type: "ObjectDetectionEfficientDetSubgraph"
+
+input_stream: "IMAGE_GPU:input_image"
+output_stream: "DETECTIONS:output_detections"
+
+# Transforms the input image on GPU to a 320x320 image. To scale the image, by
+# default it uses the STRETCH scale mode that maps the entire input image to the
+# entire transformed image. As a result, image aspect ratio may be changed and
+# objects in the image may be deformed (stretched or squeezed), but the object
+# detection model used in this graph is agnostic to that deformation.
+node: {
+  calculator: "ImageTransformationCalculator"
+  input_stream: "IMAGE_GPU:input_image"
+  output_stream: "IMAGE_GPU:transformed_image"
+  node_options: {
+    [type.googleapis.com/mediapipe.ImageTransformationCalculatorOptions] {
+      output_width: 256 # 320
+      output_height: 256 # 320
+    }
+  }
+}
+
+# Converts the transformed input image on GPU into an image tensor as a
+# TfLiteTensor. The zero_center option is set to true to normalize the
+# pixel values to [-1.f, 1.f] as opposed to [0.f, 1.f].
+node: {
+  calculator: "TfLiteConverterCalculator"
+  input_stream: "IMAGE_GPU:transformed_image"
+  output_stream: "TENSORS_GPU:image_tensor"
+  node_options: {
+    [type.googleapis.com/mediapipe.TfLiteConverterCalculatorOptions] {
+      zero_center: true
+    }
+  }
+}
+
+# Runs a TensorFlow Lite model on GPU that takes an image tensor and outputs a
+# vector of tensors representing, for instance, detection boxes/keypoints and
+# scores.
+node: {
+  calculator: "TfLiteInferenceCalculator"
+  input_stream: "TENSORS_GPU:image_tensor"
+  output_stream: "TENSORS_GPU:detection_tensors"
+  node_options: {
+    [type.googleapis.com/mediapipe.TfLiteInferenceCalculatorOptions] {
+      # model_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/object_detection_models/MOBILENET_V2_I320/model_0-5252.tflite"
+      model_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/object_detection_models/MOBILENET_V2/model.tflite"
+    }
+  }
+}
+# Generates a single side packet containing a vector of SSD anchors based on
+# the specification in the options.
+node: {
+  calculator: "AnchorSidePacketCalculator"
+  output_side_packet: "anchors"
+  node_options: {
+    [type.googleapis.com/mediapipe.AnchorSidePacketCalculatorOptions] {
+      # metadata_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/object_detection_models/MOBILENET_V2_I320/metadata.json"
+      metadata_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/object_detection_models/MOBILENET_V2/metadata.json"
+    }
+  }  
+}
+
+# Runs a TensorFlow Lite model on GPU that takes an image tensor and outputs a
+# vector of tensors representing, for instance, detection boxes/keypoints and
+# scores.
+node: {
+  calculator: "TfLiteTensorsToDetectionsCalculator"
+  # input_stream: "TENSORS_GPU:reordered_detection_tensors"
+  input_stream: "TENSORS_GPU:detection_tensors"
+  input_side_packet: "ANCHORS:anchors"
+  output_stream: "DETECTIONS:detections"
+  node_options: {
+    [type.googleapis.com/mediapipe.TfLiteTensorsToDetectionsCalculatorOptions] {
+      min_score_thresh: 0.3
+      num_classes: 6
+      # num_boxes: 19125
+      num_boxes: 12276
+      num_coords: 4
+      num_values_per_keypoint: 2
+      x_scale: 1
+      y_scale: 1
+      w_scale: 1
+      h_scale: 1
+      apply_exponential_on_box_size: true
+      keypoint_coord_offset: 0
+      num_keypoints: 0
+      sigmoid_score: false
+    }
+  }
+}
+
+# Performs non-max suppression to remove excessive detections.
+node: {
+  calculator: "NonMaxSuppressionCalculator"
+  input_stream: "detections"
+  output_stream: "filtered_detections"
+  node_options: {
+    [type.googleapis.com/mediapipe.NonMaxSuppressionCalculatorOptions] {
+      min_suppression_threshold: 0.3
+      min_score_threshold: 0.3
+      multiclass_nms: true
+    }
+  }
+}
+
+
+# Maps detection label IDs to the corresponding label text. The label map is
+# provided in the label_map_path option.
+node: {
+  calculator: "DetectionLabelIdToTextCalculator"
+  input_stream: "filtered_detections"
+  output_stream: "output_detections"
+  node_options: {
+    [type.googleapis.com/mediapipe.DetectionLabelIdToTextCalculatorOptions] {
+      # label_map_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/object_detection_models/MOBILENET_V2_I320/labels.txt"
+      label_map_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/object_detection_models/MOBILENET_V2/labels.txt"
+    }
+  }
+}

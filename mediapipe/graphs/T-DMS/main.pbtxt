@@ -32,6 +32,11 @@ node: {
   input_stream: "IMAGE_GPU:input_video_ltc"
   output_stream: "DETECTIONS:detections"
 }
+# node: {
+#   calculator: "ObjectDetectionMobilenetV2Subgraph"
+#   input_stream: "IMAGE_GPU:input_video_ltc"
+#   output_stream: "DETECTIONS:detections"
+# }
 node: {
   calculator: "ObjectDetectionRenderSubgraph"
   input_stream: "DETECTIONS:detections"
@@ -58,8 +63,6 @@ node: {
   output_stream: "DETECTIONS:face_detections_iris"
   output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections"
 }
-
-
 # Yawn
 node: {
   calculator: "YawnCalculator"
@@ -67,20 +70,9 @@ node: {
   output_stream: "YAWN:yawn"
   node_options: {
     [type.googleapis.com/mediapipe.YawnCalculatorOptions]: {
-      mar_threshold: 1
+      mar_threshold: 0.85
       verbose: false
-      duration_s_threshold: 1
-    }
-  }
-}
-node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:yawn"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/yawn_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
+      duration_s_threshold: 0.85
     }
   }
 }
@@ -138,17 +130,6 @@ node: {
     }
   }
 }
-node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:all_eyes_closed"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/drowsiness_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
-    }
-  }
-}
 # Gaze calculator
 node: {
   calculator: "GazeCalculator"
@@ -161,7 +142,7 @@ node: {
   output_stream: "RIGHT_GAZE_DIRECTION:right_gaze_direction"
   node_options: {
     [type.googleapis.com/mediapipe.GazeCalculatorOptions]: {
-      verbose: true
+      verbose: false
       color: { r: 0 g: 255 b: 0 }
       thickness: 4.0
     }
@@ -190,23 +171,12 @@ node: {
   output_stream: "HAND_ROIS_FROM_LANDMARKS:hand_rects_from_landmarks"
   output_stream: "HAND_ROIS_FROM_PALM_DETECTIONS:hand_rects_from_palm_detections"
 }
-# node: {
-#   calculator: "HandRendererSubgraph"
-#   input_stream: "IMAGE:output_image_1"
-#   input_stream: "DETECTIONS:palm_detections"
-#   input_stream: "LANDMARKS:hand_landmarks"
-#   input_stream: "HANDEDNESS:handedness"
-#   input_stream: "NORM_RECTS:0:hand_rects_from_palm_detections"
-#   input_stream: "NORM_RECTS:1:hand_rects_from_landmarks"
-#   output_stream: "IMAGE:output_image_2"
-# }
 node: {
   calculator: "HandLandmarksRenderSubgraph"
   input_stream: "IMAGE:output_image_1"
   input_stream: "LANDMARKS:hand_landmarks"
   output_stream: "IMAGE:output_image_2"
 }
-
 
 node: {
   calculator: "SOSHandSignCalculator"
@@ -220,17 +190,6 @@ node: {
     }
   }
 }
-node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:sos"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/SOS_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
-    }
-  }
-}
 # Hand hold distracting object
 node: {
   calculator: "HandHoldObjectCalculator"
@@ -240,19 +199,8 @@ node: {
   node_options: {
     [type.googleapis.com/mediapipe.HandHoldObjectCalculatorOptions]: {
       duration_s_threshold: 1
-      label: "cell phone"
+      label: "smartphone"
       verbose: false
-    }
-  }
-}
-node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:hand_hold_cell_phone"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/using_smartphone_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
     }
   }
 }
@@ -270,37 +218,15 @@ node: {
   }
 }
 node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:hand_hold_cup"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/holding_drink_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
-    }
-  }
-}
-node: {
   calculator: "HandHoldObjectCalculator"
   input_stream: "LANDMARKS:hand_landmarks"
   input_stream: "DETECTIONS:detections"
   output_stream: "HOLD:hand_hold_bottle"
   node_options: {
     [type.googleapis.com/mediapipe.HandHoldObjectCalculatorOptions]: {
-      duration_s_threshold: 1
-      label: "bottle"
+      duration_s_threshold: 0.5
+      label: "drink"
       verbose: false
-    }
-  }
-}
-node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:hand_hold_bottle"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/holding_drink_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
     }
   }
 }
@@ -321,8 +247,8 @@ node: {
     [type.googleapis.com/mediapipe.ThreatenCalculatorOptions]: {
       labels: "scissors"
       labels: "knife"
-      labels: "toothbrush"
-      verbose: false
+      labels: "gun"
+      verbose: true
       face_margin_top_ratio: 1
       face_margin_left_ratio: 0.5
       face_margin_right_ratio: 0.5
@@ -348,18 +274,191 @@ node: {
   input_stream: "gaze_render_data"
   output_stream: "IMAGE_GPU:output_image_3"
 }
+# Audio alert
 node: {
   calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:threaten"
+  input_stream: "TRIGGER:yawn"
   node_options: {
     [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/alert.wav"
-      play_duration_s: 3
-      cool_duration_s: 1
+      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/yawn_detected.wav"
+      play_duration_s: -1
+      cool_duration_s: 2
     }
   }
 }
+node: {
+  calculator: "AudioAlertCalculator"
+  input_stream: "TRIGGER:all_eyes_closed"
+  node_options: {
+    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
+      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/drowsiness_detected.wav"
+      play_duration_s: -1
+      cool_duration_s: 2
+    }
+  }
+}
+node: {
+  calculator: "AudioAlertCalculator"
+  input_stream: "TRIGGER:sos"
+  node_options: {
+    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
+      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/SOS_detected.wav"
+      play_duration_s: -1
+      cool_duration_s: 2
+    }
+  }
+}
+node: {
+  calculator: "AudioAlertCalculator"
+  input_stream: "TRIGGER:hand_hold_cell_phone"
+  node_options: {
+    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
+      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/using_smartphone_detected.wav"
+      play_duration_s: -1
+      cool_duration_s: 2
+    }
+  }
+}
+node: {
+  calculator: "AudioAlertCalculator"
+  input_stream: "TRIGGER:hand_hold_cup"
+  node_options: {
+    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
+      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/holding_drink_detected.wav"
+      play_duration_s: -1
+      cool_duration_s: 2
+    }
+  }
+}
+node: {
+  calculator: "AudioAlertCalculator"
+  input_stream: "TRIGGER:hand_hold_bottle"
+  node_options: {
+    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
+      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/holding_drink_detected.wav"
+      play_duration_s: -1
+      cool_duration_s: 2
+    }
+  }
+}
+# node: {
+#   calculator: "AudioAlertCalculator"
+#   input_stream: "TRIGGER:threaten"
+#   node_options: {
+#     [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
+#       audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/alert.wav"
+#       play_duration_s: 3
+#       cool_duration_s: 1
+#     }
+#   }
+# }
+# === Server interaction
+  # === Cooling
+node: {
+  calculator: "CoolingCalculator"
+  input_stream: "TRIGGER:sos"
+  output_stream: "TRIGGER:sos_cooling"
+  node_options: {
+    [type.googleapis.com/mediapipe.CoolingCalculatorOptions]: {
+      cool_duration_s: 30
+      verbose: false
+    }
+  }
+}
+node: {
+  calculator: "CoolingCalculator"
+  input_stream: "TRIGGER:threaten"
+  output_stream: "TRIGGER:threaten_cooling"
+  node_options: {
+    [type.googleapis.com/mediapipe.CoolingCalculatorOptions]: {
+      cool_duration_s: 30
+      verbose: false
+    }
+  }
+}
+  # === Http Post
+node: {
+  calculator: "HttpPostCalculator"
+  input_stream: "TRIGGER:sos_cooling"
+  output_stream: "RESPONSE:sos_http_post_response"
+  node_options: {
+    [type.googleapis.com/mediapipe.HttpPostCalculatorOptions]: {
+      url: "https://scity-dev.innovation.com.vn/api/device/alarm/noauth/AICAM003"
+      payload_path: "http_post_payload/sos_alert.json"
+      verbose: true
+    }
+  }
+}
+node: {
+  calculator: "HttpPostCalculator"
+  input_stream: "TRIGGER:threaten_cooling"
+  output_stream: "RESPONSE:threaten_http_post_response"
+  node_options: {
+    [type.googleapis.com/mediapipe.HttpPostCalculatorOptions]: {
+      url: "https://scity-dev.innovation.com.vn/api/device/alarm/noauth/AICAM002"
+      payload_path: "http_post_payload/threaten_alert.json"
+      verbose: true
+    }
+  }
+}
+  # === Send image
+node: {
+  calculator: "ConditionCalculator"
+  input_stream: "sos_cooling"
+  input_stream: "threaten_cooling"
+  output_stream: "post_image_signal"
+  node_options: {
+    [type.googleapis.com/mediapipe.ConditionCalculatorOptions]: {
+      logic_type: OR
+    }
+  }
+}
+node: {
+  calculator: "GateCalculator"
+  input_stream: "ALLOW:post_image_signal"
+  input_stream: "output_image_3"
+  output_stream: "output_image_3_cond_ck"
+}
+node: {
+  calculator: "GpuBufferToImageFrameCalculator"
+  input_stream: "output_image_3_cond_ck"
+  output_stream: "output_image_3_cpu"
+}
 
+# node: {
+#   calculator: "ConditionCalculator"
+#   input_stream: "CONDITION:0:sos_cooling"
+#   input_stream: "CONDITION:1:threaten_cooling"
+#   input_stream: "output_image_3_cpu"
+#   output_stream: "RESULT:cond_res"
+#   output_stream: "output_image_3_cond_ck"
+#   node_options: {
+#     [type.googleapis.com/mediapipe.ConditionCalculatorOptions]: {
+#       logic_type: OR
+#     }
+#   }
+# }
+node: {
+  calculator: "ImageFrameToBase64StringCalculator"
+  input_stream: "output_image_3_cpu"
+  output_stream: "output_image_3_base64"
+}
+node: {
+  calculator: "MqttCalculator"
+  input_stream: "PAYLOAD_IMAGE:output_image_3_base64"
+  node_options: {
+    [type.googleapis.com/mediapipe.MqttCalculatorOptions] {
+      broker_address: "scity-dev.innovation.com.vn"
+      port: 1883
+      client_id: "aicamera"
+      username: "halow"
+      password: "halow"
+      telemetry_topic: "v1/devices/6587617b-9054-45da-b1f4-f4a8d460acd4/telemetry"
+      attribute_topic: "v1/devices/6587617b-9054-45da-b1f4-f4a8d460acd4/attribute"
+      verbose: true
+    }
+  }
+}
 node: {
   calculator: "LatencyCalculator"
   input_stream: "START_TIME:start_time"

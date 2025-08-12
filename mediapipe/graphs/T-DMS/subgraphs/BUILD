@@ -6,7 +6,16 @@ mediapipe_simple_subgraph(
     graph = "object_detection_efficient_det.pbtxt",
     register_as = "ObjectDetectionEfficientDetSubgraph",
     deps = [
-        "//mediapipe/calculators/T-DMS:anchor_csv_side_packet_calculator",
+        "//mediapipe/calculators/T-DMS:anchor_side_packet_calculator",
+        "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # For ImageTransformationCalculatorOptions
+    ],
+)
+mediapipe_simple_subgraph(
+    name = "object_detection_mobilenet_v2_subgraph",
+    graph = "object_detection_mobilenet_v2.pbtxt",
+    register_as = "ObjectDetectionMobilenetV2Subgraph",
+    deps = [
+        "//mediapipe/calculators/T-DMS:anchor_side_packet_calculator",
         "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # For ImageTransformationCalculatorOptions
     ],
 )
