@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message MqttCalculatorOptions {
+    optional bool verbose = 1 [default = false];
+    required string broker_address = 2;
+    required int32 port = 3;
+    required string client_id = 4;
+    required string username = 5;
+    required string password = 6;
+    required string telemetry_topic = 7;
+    required string attribute_topic = 8;
+}

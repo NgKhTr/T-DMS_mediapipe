@@ -1,13 +1,3 @@
-cc_library(
-    name = "sfml",
-    includes = ["/usr/include/SFML"],
-    linkopts = [
-        "-lsfml-audio",
-        "-lsfml-system",
-    ],
-    visibility = ["//visibility:public"],
-)
-
 cc_binary(
     name = "main",
     srcs = ["main_gpu.cc"],
@@ -46,6 +36,11 @@ cc_binary(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log:absl_log",
+        # Convert
+        "//mediapipe/gpu:gpu_buffer_to_image_frame_calculator",
+        "//mediapipe/gpu:image_frame_to_gpu_buffer_calculator",
+        "//mediapipe/calculators/T-DMS:image_frame_to_base64_string_calculator",
+        
         # Face
         "//mediapipe/modules/face_landmark:face_landmark_front_gpu", # FaceLandmarkFrontCpu
         # For yawn
@@ -62,9 +57,10 @@ cc_binary(
         # Object detection
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_ssd_subgraph",
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_efficient_det_subgraph",
+        "//mediapipe/graphs/T-DMS/subgraphs:object_detection_mobilenet_v2_i320_subgraph",
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_render_subgraph",
         "//mediapipe/calculators/core:split_vector_calculator", # For split vector of tensors
-        "//mediapipe/calculators/T-DMS:anchor_csv_side_packet_calculator",
+        "//mediapipe/calculators/T-DMS:anchor_side_packet_calculator",
         # Hand
         "//mediapipe/modules/palm_detection:palm_detection_gpu",
         "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
@@ -82,9 +78,13 @@ cc_binary(
         # Latency
         "//mediapipe/calculators/T-DMS:latency_calculator", 
         "//mediapipe/calculators/T-DMS:start_latency_calculator",
-
+        # Flow
+        "//mediapipe/calculators/T-DMS:condition_calculator",
         # Alert
         "//mediapipe/calculators/T-DMS:audio_alert_calculator",
+        "//mediapipe/calculators/T-DMS:cooling_calculator",
+        "//mediapipe/calculators/T-DMS:http_post_calculator",
+        "//mediapipe/calculators/T-DMS:mqtt_calculator",
 
         # Check flow: for debugging
         "//mediapipe/calculators/demo:check_flow_calculator",

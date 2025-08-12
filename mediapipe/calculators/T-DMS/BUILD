@@ -2,6 +2,11 @@ load("//mediapipe/framework/port:build_config.bzl", "mediapipe_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
+cc_library(
+    name = "nlohmann",
+    hdrs = [],
+    includes = ["/usr/include"],
+)
 
 cc_library(
     name = "start_latency_calculator",
@@ -64,12 +69,10 @@ cc_library(
 
 cc_library(
     name = "sfml",
-    includes = ["/usr/include"],
     linkopts = [
         "-lsfml-audio",
         "-lsfml-system",
     ],
-    visibility = ["//visibility:public"],
 )
 
 mediapipe_proto_library(
@@ -140,16 +143,17 @@ cc_library(
 )
 
 mediapipe_proto_library(
-    name = "anchor_csv_side_packet_calculator_options_proto",
-    srcs = ["anchor_csv_side_packet_calculator_options.proto"],
+    name = "anchor_side_packet_calculator_options_proto",
+    srcs = ["anchor_side_packet_calculator_options.proto"],
 )
 cc_library(
-    name = "anchor_csv_side_packet_calculator",
+    name = "anchor_side_packet_calculator",
     srcs = [
-        "anchor_csv_side_packet_calculator.cc",
+        "anchor_side_packet_calculator.cc",
     ],
     deps = [
-        ":anchor_csv_side_packet_calculator_options_cc_proto",
+        ":anchor_side_packet_calculator_options_cc_proto",
+        ":nlohmann",
         "//mediapipe/framework/port:parse_text_proto",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
@@ -229,4 +233,110 @@ cc_library(
     ],
     alwayslink = 1, 
     # must add
+)
+
+cc_library(
+    name = "curl",
+    linkopts = ["-lcurl"],
+)
+mediapipe_proto_library(
+    name = "http_post_calculator_options_proto",
+    srcs = ["http_post_calculator_options.proto"],
+)
+cc_library(
+    name = "http_post_calculator",
+    srcs = ["http_post_calculator.cc"],
+    deps = [
+        ":curl",
+        ":http_post_calculator_options_cc_proto",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+    ],
+    alwayslink = 1,
+)
+
+mediapipe_proto_library(
+    name = "cooling_calculator_options_proto",
+    srcs = ["cooling_calculator_options.proto"],
+)
+cc_library(
+    name = "cooling_calculator",
+    srcs = [
+        "cooling_calculator.cc",
+    ],
+    deps = [
+        ":cooling_calculator_options_cc_proto",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+    ],
+    alwayslink = 1, 
+)
+
+cc_library(
+    name = "image_frame_to_base64_string_calculator",
+    srcs = [
+        "image_frame_to_base64_string_calculator.cc",
+    ],
+    deps = [
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/framework/port:opencv_imgcodecs",
+        "//mediapipe/framework/port:opencv_imgproc",        
+        "//mediapipe/framework/formats:image_frame",
+        "//mediapipe/framework/formats:image_frame_opencv",
+    ],
+    alwayslink = 1, 
+)
+
+cc_library(
+    name = "paho_mqtt",
+    linkopts = [
+        "-lpaho-mqttpp3",
+        "-lpaho-mqtt3c",
+    ],
+)
+mediapipe_proto_library(
+    name = "mqtt_calculator_options_proto",
+    srcs = ["mqtt_calculator_options.proto"],
+)
+cc_library(
+    name = "mqtt_calculator",
+    srcs = [
+        "mqtt_calculator.cc",
+    ],
+    deps = [
+        ":paho_mqtt",
+        ":nlohmann",
+        ":mqtt_calculator_options_cc_proto",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+    ],
+    alwayslink = 1, 
+)
+
+mediapipe_proto_library(
+    name = "condition_calculator_options_proto",
+    srcs = ["condition_calculator_options.proto"],
+)
+cc_library(
+    name = "condition_calculator",
+    srcs = [
+        "condition_calculator.cc",
+    ],
+    deps = [
+        ":condition_calculator_options_cc_proto",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+    ],
+    alwayslink = 1,
 )
