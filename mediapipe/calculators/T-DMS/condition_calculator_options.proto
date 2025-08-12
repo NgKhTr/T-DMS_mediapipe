@@ -1,0 +1,10 @@
+syntax = "proto2";
+package mediapipe;
+
+message ConditionCalculatorOptions {
+    enum LogicType {
+        AND = 0;
+        OR = 1;
+    }
+    optional LogicType logic_type = 1 [default = OR];
+}
