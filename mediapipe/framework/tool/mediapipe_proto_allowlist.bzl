@@ -327,7 +327,6 @@ rewrite_target_list = [
     "audio_alert_calculator_options_proto",
     "sos_hand_sign_calculator_options_proto",
     "hand_hold_object_calculator_options_proto",
-    # "anchor_csv_side_packet_calculator_options_proto",
     "anchor_side_packet_calculator_options_proto",
     "yawn_calculator_options_proto",
     "threaten_calculator_options_proto",

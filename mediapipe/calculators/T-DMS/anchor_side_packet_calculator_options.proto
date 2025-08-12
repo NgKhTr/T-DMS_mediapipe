@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message AnchorSidePacketCalculatorOptions {
+    optional string csv_path = 1;
+    optional string metadata_path = 2; 
+}
