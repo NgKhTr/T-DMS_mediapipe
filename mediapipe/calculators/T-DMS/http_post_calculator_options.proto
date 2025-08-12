@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message HttpPostCalculatorOptions {
+    required bool verbose = 1 [default = false];
+    required string url = 2;
+    required string payload_path = 3;
+}
