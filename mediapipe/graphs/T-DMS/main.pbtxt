@@ -221,7 +221,7 @@ node: {
   calculator: "HandHoldObjectCalculator"
   input_stream: "LANDMARKS:hand_landmarks"
   input_stream: "DETECTIONS:detections"
-  output_stream: "HOLD:hand_hold_bottle"
+  output_stream: "HOLD:hand_hold_drink"
   node_options: {
     [type.googleapis.com/mediapipe.HandHoldObjectCalculatorOptions]: {
       duration_s_threshold: 0.5
@@ -332,7 +332,7 @@ node: {
 }
 node: {
   calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:hand_hold_bottle"
+  input_stream: "TRIGGER:hand_hold_drink"
   node_options: {
     [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
       audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/holding_drink_detected.wav"
@@ -463,15 +463,55 @@ node: {
   calculator: "LatencyCalculator"
   input_stream: "START_TIME:start_time"
   input_stream: "IMAGE_GPU:output_image_3"
+  input_stream: "THREATEN:threaten"
+  input_stream: "SOS:sos"
   input_stream: "ALL_EYES_CLOSED:all_eyes_closed"
-  output_stream: "IMAGE_GPU:output_video"
+  input_stream: "HAND_HOLD_CELL_PHONE:hand_hold_cell_phone"
+  input_stream: "HAND_HOLD_DRINK:hand_hold_drink"
+  output_stream: "IMAGE_GPU:output_image_4"
+  output_stream: "THREATEN:threaten_1"
+  output_stream: "SOS:sos_1"
   output_stream: "ALL_EYES_CLOSED:all_eyes_closed_1"
+  output_stream: "HAND_HOLD_CELL_PHONE:hand_hold_cell_phone_1"
+  output_stream: "HAND_HOLD_DRINK:hand_hold_drink_1"
   output_stream: "FPS:fps"
   output_stream: "LATENCY:latency"
+
   node_options: {
     [type.googleapis.com/mediapipe.LatencyCalculatorOptions] {
       label: "Main flow"
       verbose: false
     }
   }
+}
+node: {
+  calculator: "TextRenderDataCalculator"
+  input_stream: "FPS:fps"
+  input_stream: "THREATEN:threaten"
+  input_stream: "SOS:sos"
+  input_stream: "ALL_EYES_CLOSED:all_eyes_closed"
+  input_stream: "YAWN:yawn"
+  input_stream: "HAND_HOLD_CELL_PHONE:hand_hold_cell_phone"
+  input_stream: "HAND_HOLD_DRINK:hand_hold_drink"
+  output_stream: "TEXT_RENDER_DATA:text_render_data"
+  node_options: {
+    [type.googleapis.com/mediapipe.TextRenderDataCalculatorOptions] {
+      warning_color: { r: 255 g: 0 b: 0 }
+      normal_color: { r: 0 g: 0 b: 255 }
+      content_color: { r: 255 g: 255 b: 255 }
+      font_height: 0.02
+      normalized: true
+      font_face: 1
+      line_gap: 0.04
+      left: 0.01
+      init_baseline: 0.04
+      outline_thickness: 0.5
+    }
+  }
+}
+node: {
+  calculator: "AnnotationOverlayCalculator"
+  input_stream: "IMAGE_GPU:output_image_4"
+  input_stream: "text_render_data"
+  output_stream: "IMAGE_GPU:output_video"
 }

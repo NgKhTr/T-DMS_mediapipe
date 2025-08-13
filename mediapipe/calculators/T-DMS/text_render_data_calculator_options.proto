@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+package mediapipe;
+
+import "mediapipe/util/color.proto";
+
+message TextRenderDataCalculatorOptions {
+    required Color warning_color = 1;
+    required Color normal_color = 2;
+    required Color content_color = 3;
+    required float font_height = 4;
+    required bool normalized = 5;
+    required int32 font_face = 6;
+    required float line_gap = 7;
+    required float left = 8;
+    required float init_baseline = 9;
+    required float outline_thickness = 10;
+}

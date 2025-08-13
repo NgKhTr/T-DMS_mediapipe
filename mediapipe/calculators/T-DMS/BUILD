@@ -340,3 +340,29 @@ cc_library(
     ],
     alwayslink = 1,
 )
+
+mediapipe_proto_library(
+    name = "text_render_data_calculator_options_proto",
+    srcs = ["text_render_data_calculator_options.proto"],
+    deps = [
+        "//mediapipe/util:color_proto",
+    ],
+)
+cc_library(
+    name = "text_render_data_calculator",
+    srcs = [
+        "text_render_data_calculator.cc",
+    ],
+    deps = [
+        ":text_render_data_calculator_options_cc_proto",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework/port:opencv_imgproc",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/util:color_cc_proto",
+        "//mediapipe/util:render_data_cc_proto",
+        "//mediapipe/framework/formats:landmark_cc_proto", # for landmark.pb.h
+    ],
+    alwayslink = 1,
+)
