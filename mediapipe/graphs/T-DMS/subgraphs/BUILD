@@ -24,7 +24,7 @@ mediapipe_simple_subgraph(
     graph = "object_detection_ssd.pbtxt",
     register_as = "ObjectDetectionSsdSubgraph",
     deps = [
-        "//mediapipe/calculators/T-DMS:anchor_csv_side_packet_calculator",
+        "//mediapipe/calculators/T-DMS:anchor_side_packet_calculator",
         "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # For ImageTransformationCalculatorOptions
     ],
 )

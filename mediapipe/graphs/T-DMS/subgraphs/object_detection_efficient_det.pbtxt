@@ -67,15 +67,6 @@ node: {
 }
 # Generates a single side packet containing a vector of SSD anchors based on
 # the specification in the options.
-# node: {
-#   calculator: "AnchorCsvSidePacketCalculator"
-#   output_side_packet: "anchors"
-#   node_options: {
-#     [type.googleapis.com/mediapipe.AnchorCsvSidePacketCalculatorOptions] {
-#       path: "mediapipe/models/efficientdet_lite0_fp16_no_nms_anchors.csv"
-#     }
-#   }  
-# }
 node: {
   calculator: "AnchorSidePacketCalculator"
   output_side_packet: "anchors"

@@ -57,7 +57,7 @@ cc_binary(
         # Object detection
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_ssd_subgraph",
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_efficient_det_subgraph",
-        "//mediapipe/graphs/T-DMS/subgraphs:object_detection_mobilenet_v2_i320_subgraph",
+        "//mediapipe/graphs/T-DMS/subgraphs:object_detection_mobilenet_v2_subgraph",
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_render_subgraph",
         "//mediapipe/calculators/core:split_vector_calculator", # For split vector of tensors
         "//mediapipe/calculators/T-DMS:anchor_side_packet_calculator",
