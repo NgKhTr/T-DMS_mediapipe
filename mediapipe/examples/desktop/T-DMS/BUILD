@@ -85,7 +85,8 @@ cc_binary(
         "//mediapipe/calculators/T-DMS:cooling_calculator",
         "//mediapipe/calculators/T-DMS:http_post_calculator",
         "//mediapipe/calculators/T-DMS:mqtt_calculator",
-
+        # Render
+        "//mediapipe/calculators/T-DMS:text_render_data_calculator",
         # Check flow: for debugging
         "//mediapipe/calculators/demo:check_flow_calculator",
     ]
