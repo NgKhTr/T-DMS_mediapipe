@@ -52,9 +52,7 @@ public:
     }
     absl::Status Process(CalculatorContext* cc) override {
         auto render_data = absl::make_unique<RenderData>();
-        LOG(INFO) << "Here";
         if (!cc->Inputs().Tag("FPS").IsEmpty()) {
-            LOG(INFO) << "Not empty";
             double fps = cc->Inputs().Tag("FPS").Get<double>();
             auto* annotation = render_data->add_render_annotations();
             annotation->mutable_text()->set_left(left_);
