@@ -1,16 +1,16 @@
-input_stream: "input_video"
-output_stream: "output_video"
+input_stream: "input_frame"
+output_stream: "output_frame"
 
 node: {
   calculator: "FlowLimiterCalculator"
-  input_stream: "input_video"
-  input_stream: "FINISHED:output_video"
+  input_stream: "input_frame"
+  input_stream: "FINISHED:output_frame"
   input_stream_info: {
     tag_index: 'FINISHED'
     back_edge: true
   }
   input_side_packet: "MAX_IN_FLIGHT:max_in_flight"
-  output_stream: "throttled_input_video"
+  output_stream: "throttled_input_frame"
   node_options: {
     [type.googleapis.com/mediapipe.FlowLimiterCalculatorOptions] {
       max_in_flight: 1
@@ -21,27 +21,33 @@ node: {
 
 node: {
   calculator: "StartLatencyCalculator"
-  input_stream: "IMAGE_GPU:throttled_input_video"
-  output_stream: "IMAGE_GPU:input_video_ltc"
+  input_stream: "IMAGE_CPU:throttled_input_frame"
+  output_stream: "IMAGE_CPU:input_frame_ltc"
   output_stream: "START_TIME:start_time"
+}
+
+node: {
+  calculator: "ImageFrameToGpuBufferCalculator"
+  input_stream: "input_frame_ltc"
+  output_stream: "input_frame_gpu"
 }
 
 # Object detection
 node: {
   calculator: "ObjectDetectionEfficientDetSubgraph"
-  input_stream: "IMAGE_GPU:input_video_ltc"
+  input_stream: "IMAGE_GPU:input_frame_gpu"
   output_stream: "DETECTIONS:detections"
 }
 # node: {
 #   calculator: "ObjectDetectionMobilenetV2Subgraph"
-#   input_stream: "IMAGE_GPU:input_video_ltc"
+#   input_stream: "IMAGE_GPU:input_frame_gpu"
 #   output_stream: "DETECTIONS:detections"
 # }
 node: {
   calculator: "ObjectDetectionRenderSubgraph"
   input_stream: "DETECTIONS:detections"
-  input_stream: "IMAGE_GPU:input_video_ltc"
-  output_stream: "IMAGE_GPU:output_image_0"
+  input_stream: "IMAGE_GPU:input_frame_gpu"
+  output_stream: "IMAGE_GPU:output_frame_gpu_0"
 }
 
 # Detects faces and corresponding landmarks.
@@ -56,7 +62,7 @@ node: {
 }
 node: {
   calculator: "FaceLandmarkFrontGpu"
-  input_stream: "IMAGE:input_video_ltc"
+  input_stream: "IMAGE:input_frame_gpu"
   input_side_packet: "NUM_FACES:num_faces"
   output_stream: "LANDMARKS:multi_face_landmarks"
   output_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks"
@@ -92,7 +98,7 @@ node: {
 node: {
   calculator: "IrisLandmarksSubgraph"
   input_stream: "FACE_LANDMARKS:face_landmarks"
-  input_stream: "IMAGE_GPU:input_video_ltc"
+  input_stream: "IMAGE_GPU:input_frame_gpu"
   output_stream: "LEFT_EYE_CONTOUR_LANDMARKS:left_eye_contour_landmarks"
   output_stream: "LEFT_EYE_IRIS_LANDMARKS:left_iris_landmarks"
   output_stream: "LEFT_EYE_ROI:left_eye_rect_from_landmarks"
@@ -103,7 +109,7 @@ node: {
 # render iris and face landmarks
 node: {
   calculator: "IrisAndFaceLandmarkRenderSubgraph"
-  input_stream: "IMAGE_GPU:output_image_0"
+  input_stream: "IMAGE_GPU:output_frame_gpu_0"
   input_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks" #
   input_stream: "MULTI_FACE_LANDMARKS:multi_face_landmarks" #
   input_stream: "EYE_LANDMARKS_LEFT:left_eye_contour_landmarks" #
@@ -113,7 +119,7 @@ node: {
   input_stream: "LEFT_EYE_RECT:left_eye_rect_from_landmarks" #
   input_stream: "RIGHT_EYE_RECT:right_eye_rect_from_landmarks" #
   input_stream: "FACE_DETECTIONS:face_detections_iris"
-  output_stream: "IMAGE_GPU:output_image_1"
+  output_stream: "IMAGE_GPU:output_frame_gpu_1"
 }
 
 
@@ -135,7 +141,7 @@ node: {
   calculator: "GazeCalculator"
   input_stream: "LEFT_IRIS_LANDMARKS:left_iris_landmarks"
   input_stream: "RIGHT_IRIS_LANDMARKS:right_iris_landmarks"
-  input_stream: "IMAGE_GPU:input_video_ltc"
+  input_stream: "IMAGE_GPU:input_frame_gpu"
   input_stream: "FACE_LANDMARKS:face_landmarks"
   output_stream: "GAZE_RENDER_DATA:gaze_render_data"
   output_stream: "LEFT_GAZE_DIRECTION:left_gaze_direction"
@@ -163,7 +169,7 @@ node: {
 }
 node: {
   calculator: "HandLandmarkTrackingGpu"
-  input_stream: "IMAGE:input_video_ltc"
+  input_stream: "IMAGE:input_frame_gpu"
   input_side_packet: "NUM_HANDS:num_hands"
   output_stream: "LANDMARKS:hand_landmarks"
   output_stream: "HANDEDNESS:handedness"
@@ -173,9 +179,9 @@ node: {
 }
 node: {
   calculator: "HandLandmarksRenderSubgraph"
-  input_stream: "IMAGE:output_image_1"
+  input_stream: "IMAGE:output_frame_gpu_1"
   input_stream: "LANDMARKS:hand_landmarks"
-  output_stream: "IMAGE:output_image_2"
+  output_stream: "IMAGE:output_frame_gpu_2"
 }
 
 node: {
@@ -233,7 +239,7 @@ node: {
 # Threaten detection
 node: {
   calculator: "FaceDetectionShortRangeGpu"
-  input_stream: "IMAGE:input_video_ltc"
+  input_stream: "IMAGE:input_frame_gpu"
   output_stream: "DETECTIONS:face_detections"
 }
 node: {
@@ -269,10 +275,10 @@ node: {
 }
 node: {
   calculator: "AnnotationOverlayCalculator"
-  input_stream: "IMAGE_GPU:output_image_2"
+  input_stream: "IMAGE_GPU:output_frame_gpu_2"
   input_stream: "face_margin_detections_render_data"
   input_stream: "gaze_render_data"
-  output_stream: "IMAGE_GPU:output_image_3"
+  output_stream: "IMAGE_GPU:output_frame_gpu_3"
 }
 # Audio alert
 node: {
@@ -377,30 +383,30 @@ node: {
   }
 }
   # === Http Post
-node: {
-  calculator: "HttpPostCalculator"
-  input_stream: "TRIGGER:sos_cooling"
-  output_stream: "RESPONSE:sos_http_post_response"
-  node_options: {
-    [type.googleapis.com/mediapipe.HttpPostCalculatorOptions]: {
-      url: "https://scity-dev.innovation.com.vn/api/device/alarm/noauth/AICAM003"
-      payload_path: "http_post_payload/sos_alert.json"
-      verbose: true
-    }
-  }
-}
-node: {
-  calculator: "HttpPostCalculator"
-  input_stream: "TRIGGER:threaten_cooling"
-  output_stream: "RESPONSE:threaten_http_post_response"
-  node_options: {
-    [type.googleapis.com/mediapipe.HttpPostCalculatorOptions]: {
-      url: "https://scity-dev.innovation.com.vn/api/device/alarm/noauth/AICAM002"
-      payload_path: "http_post_payload/threaten_alert.json"
-      verbose: true
-    }
-  }
-}
+# node: {
+#   calculator: "HttpPostCalculator"
+#   input_stream: "TRIGGER:sos_cooling"
+#   output_stream: "RESPONSE:sos_http_post_response"
+#   node_options: {
+#     [type.googleapis.com/mediapipe.HttpPostCalculatorOptions]: {
+#       url: "https://scity-dev.innovation.com.vn/api/device/alarm/noauth/AICAM003"
+#       payload_path: "http_post_payload/sos_alert.json"
+#       verbose: true
+#     }
+#   }
+# }
+# node: {
+#   calculator: "HttpPostCalculator"
+#   input_stream: "TRIGGER:threaten_cooling"
+#   output_stream: "RESPONSE:threaten_http_post_response"
+#   node_options: {
+#     [type.googleapis.com/mediapipe.HttpPostCalculatorOptions]: {
+#       url: "https://scity-dev.innovation.com.vn/api/device/alarm/noauth/AICAM002"
+#       payload_path: "http_post_payload/threaten_alert.json"
+#       verbose: true
+#     }
+#   }
+# }
   # === Send image
 node: {
   calculator: "ConditionCalculator"
@@ -416,20 +422,20 @@ node: {
 node: {
   calculator: "GateCalculator"
   input_stream: "ALLOW:post_image_signal"
-  input_stream: "output_image_3"
-  output_stream: "output_image_3_cond_ck"
+  input_stream: "output_frame_gpu_3"
+  output_stream: "output_frame_gpu_3_cond_ck"
 }
 node: {
   calculator: "GpuBufferToImageFrameCalculator"
-  input_stream: "output_image_3_cond_ck"
-  output_stream: "output_image_3_cpu"
+  input_stream: "output_frame_gpu_3_cond_ck"
+  output_stream: "output_image_cpu_3"
 }
 
 # node: {
 #   calculator: "ConditionCalculator"
 #   input_stream: "CONDITION:0:sos_cooling"
 #   input_stream: "CONDITION:1:threaten_cooling"
-#   input_stream: "output_image_3_cpu"
+#   input_stream: "output_image_cpu_3"
 #   output_stream: "RESULT:cond_res"
 #   output_stream: "output_image_3_cond_ck"
 #   node_options: {
@@ -440,12 +446,12 @@ node: {
 # }
 node: {
   calculator: "ImageFrameToBase64StringCalculator"
-  input_stream: "output_image_3_cpu"
-  output_stream: "output_image_3_base64"
+  input_stream: "output_image_cpu_3"
+  output_stream: "output_image_base64_3"
 }
 node: {
   calculator: "MqttCalculator"
-  input_stream: "PAYLOAD_IMAGE:output_image_3_base64"
+  input_stream: "PAYLOAD_IMAGE:output_image_base64_3"
   node_options: {
     [type.googleapis.com/mediapipe.MqttCalculatorOptions] {
       broker_address: "scity-dev.innovation.com.vn"
@@ -462,13 +468,13 @@ node: {
 node: {
   calculator: "LatencyCalculator"
   input_stream: "START_TIME:start_time"
-  input_stream: "IMAGE_GPU:output_image_3"
+  input_stream: "IMAGE_GPU:output_frame_gpu_3"
   input_stream: "THREATEN:threaten"
   input_stream: "SOS:sos"
   input_stream: "ALL_EYES_CLOSED:all_eyes_closed"
   input_stream: "HAND_HOLD_CELL_PHONE:hand_hold_cell_phone"
   input_stream: "HAND_HOLD_DRINK:hand_hold_drink"
-  output_stream: "IMAGE_GPU:output_image_4"
+  output_stream: "IMAGE_GPU:output_frame_gpu_4"
   output_stream: "THREATEN:threaten_1"
   output_stream: "SOS:sos_1"
   output_stream: "ALL_EYES_CLOSED:all_eyes_closed_1"
@@ -511,7 +517,12 @@ node: {
 }
 node: {
   calculator: "AnnotationOverlayCalculator"
-  input_stream: "IMAGE_GPU:output_image_4"
+  input_stream: "IMAGE_GPU:output_frame_gpu_4"
   input_stream: "text_render_data"
-  output_stream: "IMAGE_GPU:output_video"
+  output_stream: "IMAGE_GPU:output_frame_gpu_5"
+}
+node: {
+  calculator: "GpuBufferToImageFrameCalculator"
+  input_stream: "output_frame_gpu_5"
+  output_stream: "output_frame"
 }

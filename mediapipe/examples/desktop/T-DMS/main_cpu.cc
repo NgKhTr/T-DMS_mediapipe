@@ -15,6 +15,9 @@
 // An example of sending OpenCV webcam frames into a MediaPipe graph.
 #include <cstdlib>
 
+#include <chrono>
+#include <thread>
+
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/absl_log.h"
@@ -29,9 +32,12 @@
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/util/resource_util.h"
 
-constexpr char kInputStream[] = "input_video";
-constexpr char kOutputStream[] = "output_video";
+constexpr char kInputStream[] = "input_frame";
+constexpr char kOutputStream[] = "output_frame";
 constexpr char kWindowName[] = "MediaPipe";
+
+const auto warm_up_phase_duration = std::chrono::seconds(10);
+const auto stopped_phase_duration = std::chrono::seconds(2);
 
 ABSL_FLAG(std::string, calculator_graph_config_file, "",
           "Name of file containing text format CalculatorGraphConfig proto.");
@@ -43,120 +49,179 @@ ABSL_FLAG(std::string, output_video_path, "",
           "If not provided, show result in a window.");
 
 absl::Status RunMPPGraph() {
-  std::string calculator_graph_config_contents;
-  MP_RETURN_IF_ERROR(mediapipe::file::GetContents(
-      absl::GetFlag(FLAGS_calculator_graph_config_file),
-      &calculator_graph_config_contents));
-  ABSL_LOG(INFO) << "Get calculator graph config contents: "
-                 << calculator_graph_config_contents;
-  mediapipe::CalculatorGraphConfig config =
-      mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(
-          calculator_graph_config_contents);
+    std::string calculator_graph_config_contents;
+    MP_RETURN_IF_ERROR(mediapipe::file::GetContents(
+        absl::GetFlag(FLAGS_calculator_graph_config_file),
+        &calculator_graph_config_contents));
+    ABSL_LOG(INFO) << "Get calculator graph config contents: "
+                   << calculator_graph_config_contents;
+    mediapipe::CalculatorGraphConfig config =
+        mediapipe::ParseTextProtoOrDie<mediapipe::CalculatorGraphConfig>(
+            calculator_graph_config_contents);
 
-  ABSL_LOG(INFO) << "Initialize the calculator graph.";
-  mediapipe::CalculatorGraph graph;
-  MP_RETURN_IF_ERROR(graph.Initialize(config));
+    ABSL_LOG(INFO) << "Initialize the calculator graph.";
+    mediapipe::CalculatorGraph graph;
+    MP_RETURN_IF_ERROR(graph.Initialize(config));
 
-  ABSL_LOG(INFO) << "Initialize the camera or load the video.";
-  cv::VideoCapture capture;
-  const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
-  if (load_video) {
-    capture.open(absl::GetFlag(FLAGS_input_video_path));
-  } else {
-    capture.open(0);
-  }
-  RET_CHECK(capture.isOpened());
-
-  cv::VideoWriter writer;
-  const bool save_video = !absl::GetFlag(FLAGS_output_video_path).empty();
-  if (!save_video) {
-    cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
-#if (CV_MAJOR_VERSION >= 3) && (CV_MINOR_VERSION >= 2)
-    capture.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-    capture.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-    capture.set(cv::CAP_PROP_FPS, 30);
-#endif
-  }
-
-  ABSL_LOG(INFO) << "Start running the calculator graph.";
-  MP_ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
-                      graph.AddOutputStreamPoller(kOutputStream));
-  MP_RETURN_IF_ERROR(graph.StartRun({}));
-
-  ABSL_LOG(INFO) << "Start grabbing and processing frames.";
-  bool grab_frames = true;
-  while (grab_frames) {
-    // Capture opencv camera or video frame.
-    cv::Mat camera_frame_raw;
-    capture >> camera_frame_raw;
-    if (camera_frame_raw.empty()) {
-      if (!load_video) {
-        ABSL_LOG(INFO) << "Ignore empty frames from camera.";
-        continue;
-      }
-      ABSL_LOG(INFO) << "Empty frame, end of video reached.";
-      break;
+    ABSL_LOG(INFO) << "Initialize the camera or load the video.";
+    cv::VideoCapture capture;
+    const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
+    if (load_video) {
+        capture.open(absl::GetFlag(FLAGS_input_video_path));
+    } else {
+        std::string pipeline = "v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec ! videoconvert ! appsink";
+        capture.open(pipeline, cv::CAP_GSTREAMER);
     }
-    cv::Mat camera_frame;
-    cv::cvtColor(camera_frame_raw, camera_frame, cv::COLOR_BGR2RGB);
-    if (!load_video) {
-      cv::flip(camera_frame, camera_frame, /*flipcode=HORIZONTAL*/ 1);
-    }
+    RET_CHECK(capture.isOpened());
 
-    // Wrap Mat into an ImageFrame.
-    auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
-        mediapipe::ImageFormat::SRGB, camera_frame.cols, camera_frame.rows,
-        mediapipe::ImageFrame::kDefaultAlignmentBoundary);
-    cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
-    camera_frame.copyTo(input_frame_mat);
+    cv::VideoWriter writer;
+    const bool save_video = !absl::GetFlag(FLAGS_output_video_path).empty();
 
-    // Send image packet into the graph.
-    size_t frame_timestamp_us =
-        (double)cv::getTickCount() / (double)cv::getTickFrequency() * 1e6;
-    MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
-        kInputStream, mediapipe::Adopt(input_frame.release())
-                          .At(mediapipe::Timestamp(frame_timestamp_us))));
-
-    // Get the graph result packet, or stop if that fails.
-    mediapipe::Packet packet;
-    if (!poller.Next(&packet)) break;
-    auto& output_frame = packet.Get<mediapipe::ImageFrame>();
-
-    // Convert back to opencv for display or saving.
-    cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
-    cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+    int w = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_WIDTH));
+	int h = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_HEIGHT));
+	double fps = capture.get(cv::CAP_PROP_FPS);
+	ABSL_LOG(INFO) << "Opened at " << w << "x" << h << " @" << fps << " FPS\n";
     if (save_video) {
-      if (!writer.isOpened()) {
         ABSL_LOG(INFO) << "Prepare video writer.";
         writer.open(absl::GetFlag(FLAGS_output_video_path),
-                    mediapipe::fourcc('a', 'v', 'c', '1'),  // .mp4
-                    capture.get(cv::CAP_PROP_FPS), output_frame_mat.size());
+                    mediapipe::fourcc('a', 'v', 'c', '1'),
+                    fps, cv::Size(w, h));
         RET_CHECK(writer.isOpened());
-      }
-      writer.write(output_frame_mat);
     } else {
-      cv::imshow(kWindowName, output_frame_mat);
-      // Press any key to exit.
-      const int pressed_key = cv::waitKey(5);
-      if (pressed_key >= 0 && pressed_key != 255) grab_frames = false;
+        cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
     }
-  }
 
-  ABSL_LOG(INFO) << "Shutting down.";
-  if (writer.isOpened()) writer.release();
-  MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
-  return graph.WaitUntilDone();
+    std::shared_ptr<cv::Mat> latest_output_frame = std::make_shared<cv::Mat>();
+    std::mutex frame_mutex;
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex);
+        *latest_output_frame = cv::Mat(h, w, CV_8UC3, cv::Scalar(255, 20, 20));
+    }
+    MP_RETURN_IF_ERROR(graph.ObserveOutputStream(
+        kOutputStream,
+        [latest_output_frame, &frame_mutex](const mediapipe::Packet& packet) -> absl::Status {
+            auto& output_frame = packet.Get<mediapipe::ImageFrame>();
+            cv::Mat output_frame_mat = mediapipe::formats::MatView(&output_frame);
+
+            if (output_frame_mat.channels() == 4) {
+				cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGBA2BGR);
+            } else {
+                cv::cvtColor(output_frame_mat, output_frame_mat, cv::COLOR_RGB2BGR);
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(frame_mutex);
+                *latest_output_frame = output_frame_mat.clone();
+            }
+            return absl::OkStatus();
+        }));
+
+    MP_RETURN_IF_ERROR(graph.StartRun({}));
+
+    ABSL_LOG(INFO) << "Start grabbing and processing frames.";
+
+    int ms_delay = static_cast<int>(1000.0 / fps); // milliseconds per frame
+	const auto frame_duration = std::chrono::milliseconds(ms_delay);
+    auto next_frame_time = std::chrono::steady_clock::now();
+	auto end_phase_time = next_frame_time + warm_up_phase_duration;
+ 
+	enum class Phase {
+		WARM_UP,
+		RUNNING,
+		STOPPED
+	};
+	Phase current_phase = Phase::WARM_UP;
+    while (true) {
+        // Capture opencv camera or video frame.
+        cv::Mat frame_raw;
+		if (current_phase == Phase::WARM_UP) {
+			frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
+		} else if (current_phase == Phase::RUNNING) {
+			capture >> frame_raw;
+			if (frame_raw.empty()) {
+				// if (!load_video) {
+				// 	// ABSL_LOG(INFO) << "Ignore empty frames from camera.";
+				// 	continue;
+				// }
+				current_phase = Phase::STOPPED;
+				end_phase_time = next_frame_time + stopped_phase_duration;
+                ABSL_LOG(INFO) << "Change phase to STOPPED.";
+				frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
+			}
+            cv::imwrite("/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/output.jpg", frame_raw);
+		} else if (current_phase == Phase::STOPPED) {
+			frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
+		}
+		cv::Mat frame;
+		cv::cvtColor(frame_raw, frame, cv::COLOR_BGR2RGB);
+		if (!load_video) {
+			cv::flip(frame, frame, /*flipcode=HORIZONTAL*/ 1);
+		}
+
+        // Wrap Mat into an ImageFrame.
+        auto input_frame = absl::make_unique<mediapipe::ImageFrame>(
+            mediapipe::ImageFormat::SRGB, frame.cols, frame.rows,
+            mediapipe::ImageFrame::kDefaultAlignmentBoundary);
+        cv::Mat input_frame_mat = mediapipe::formats::MatView(input_frame.get());
+        frame.copyTo(input_frame_mat);
+
+        // Send image packet into the graph.
+        size_t frame_timestamp_us =
+            (double)cv::getTickCount() / (double)cv::getTickFrequency() * 1e6;
+        MP_RETURN_IF_ERROR(graph.AddPacketToInputStream(
+            kInputStream, mediapipe::Adopt(input_frame.release())
+                              .At(mediapipe::Timestamp(frame_timestamp_us))));
+
+        {
+            std::lock_guard<std::mutex> lock(frame_mutex);
+            if (!latest_output_frame->empty()) {
+                if (save_video && (current_phase == Phase::RUNNING || current_phase == Phase::STOPPED)) {
+                    writer.write(*latest_output_frame);
+                }
+                // else {
+                    cv::imshow(kWindowName, *latest_output_frame);
+                    int pressed_key = cv::waitKey(5);
+                    if (pressed_key >= 0 && pressed_key != 255) {
+                        current_phase = Phase::STOPPED;
+                        end_phase_time = next_frame_time + stopped_phase_duration;
+                        ABSL_LOG(INFO) << "Change phase to STOPPED.";
+                    }
+                // }
+            }
+        }
+
+        next_frame_time += frame_duration;
+        std::this_thread::sleep_until(next_frame_time);
+		if (current_phase == Phase::WARM_UP && next_frame_time >= end_phase_time) {
+            current_phase = Phase::RUNNING;
+            ABSL_LOG(INFO) << "Change phase to RUNNING.";
+		} else if (current_phase == Phase::STOPPED && next_frame_time >= end_phase_time) {
+			break;
+		}
+    }
+
+    ABSL_LOG(INFO) << "Shutting down.";
+    if (writer.isOpened()) {
+        writer.release();
+    }
+    if (capture.isOpened()) {
+        capture.release();
+    }
+    ABSL_LOG(INFO) << "Shut down.";
+    MP_RETURN_IF_ERROR(graph.CloseInputStream(kInputStream));
+    return graph.WaitUntilDone();
 }
 
-int main(int argc, char** argv) {
-  google::InitGoogleLogging(argv[0]);
-  absl::ParseCommandLine(argc, argv);
-  absl::Status run_status = RunMPPGraph();
-  if (!run_status.ok()) {
-    ABSL_LOG(ERROR) << "Failed to run the graph: " << run_status.message();
-    return EXIT_FAILURE;
-  } else {
-    ABSL_LOG(INFO) << "Success!";
-  }
-  return EXIT_SUCCESS;
+int main(int argc, char **argv)
+{
+    google::InitGoogleLogging(argv[0]);
+    absl::ParseCommandLine(argc, argv);
+    absl::Status run_status = RunMPPGraph();
+    if (!run_status.ok()) {
+        ABSL_LOG(ERROR) << "Failed to run the graph: " << run_status.message();
+        return EXIT_FAILURE;
+    } else {
+        ABSL_LOG(INFO) << "Success!";
+    }
+    return EXIT_SUCCESS;
 }
