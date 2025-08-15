@@ -5,6 +5,7 @@
 #include "mediapipe/framework/formats/landmark.pb.h"
 #include "mediapipe/calculators/T-DMS/sos_hand_sign_calculator_options.pb.h"
 #include "mediapipe/framework/port/logging.h"
+#include "mediapipe/framework/timestamp.h"
 
 namespace mediapipe {
 
@@ -14,7 +15,7 @@ private:
     bool verbose_;
     float max_transform_duration_s_threshold_; // Duration in seconds
     float min_keep_duration_s_threshold_; // Duration in seconds
-    std::chrono::steady_clock::time_point start_time_;
+    Timestamp start_timestamp_;
 
     enum class SignStatus {
         INITIAL,
@@ -145,13 +146,13 @@ public:
                 const auto& hand_landmarks_vec = cc->Inputs().Tag("LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
                 if (IsSign1(hand_landmarks_vec)) {
                     recent_sign_ = SignStatus::SIGN1;
-                    start_time_ = std::chrono::steady_clock::now();
+                    start_timestamp_ = cc->InputTimestamp();
                     recent_state_ = State::KEEPING;
                 }
             }
         } else if (recent_sign_ == SignStatus::SIGN1) {
-            auto now = std::chrono::steady_clock::now();
-            float duration = std::chrono::duration<float>(now - start_time_).count();
+            Timestamp now = cc->InputTimestamp();
+            float duration = (now - start_timestamp_).Milliseconds() / 1000.0f;
             if (recent_state_ == State::KEEPING) {
                 if (duration < min_keep_duration_s_threshold_) {
                     if (!cc->Inputs().Tag("LANDMARKS").IsEmpty() 
@@ -161,7 +162,7 @@ public:
                         recent_state_ = State::INITIAL;
                     }
                 } else {
-                    start_time_ = std::chrono::steady_clock::now();
+                    start_timestamp_ = cc->InputTimestamp();
                     recent_state_ = State::TRANSFORMING;
                 }
             } else if (recent_state_ == State::TRANSFORMING) {
@@ -170,10 +171,10 @@ public:
                         const auto& hand_landmarks_vec = cc->Inputs().Tag("LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
                         if (IsSign2(hand_landmarks_vec)) {
                             recent_sign_ = SignStatus::SIGN2;
-                            start_time_ = std::chrono::steady_clock::now();
+                            start_timestamp_ = cc->InputTimestamp();
                             recent_state_ = State::KEEPING;
                         } else if (IsSign1(hand_landmarks_vec)) {
-                            start_time_ = std::chrono::steady_clock::now();
+                            start_timestamp_ = cc->InputTimestamp();
                         }
                     }
                 } else {
@@ -185,8 +186,8 @@ public:
                 recent_state_ = State::INITIAL;
             }
         } else if (recent_sign_ == SignStatus::SIGN2) {
-            auto now = std::chrono::steady_clock::now();
-            float duration = std::chrono::duration<float>(now - start_time_).count();
+            Timestamp now = cc->InputTimestamp();
+            float duration = (now - start_timestamp_).Milliseconds() / 1000.0f;
             if (recent_state_ == State::KEEPING) {
                 if (duration < min_keep_duration_s_threshold_) {
                     if (!cc->Inputs().Tag("LANDMARKS").IsEmpty()
@@ -196,7 +197,7 @@ public:
                         recent_state_ = State::INITIAL;
                     }
                 } else {
-                    start_time_ = std::chrono::steady_clock::now();
+                    start_timestamp_ = cc->InputTimestamp();
                     recent_state_ = State::TRANSFORMING;
                 }
             } else if (recent_state_ == State::TRANSFORMING) {
@@ -205,10 +206,10 @@ public:
                         const auto& hand_landmarks_vec = cc->Inputs().Tag("LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
                         if (IsSign3(hand_landmarks_vec)) {
                             recent_sign_ = SignStatus::SIGN3;
-                            start_time_ = std::chrono::steady_clock::now();
+                            start_timestamp_ = cc->InputTimestamp();
                             recent_state_ = State::KEEPING;
                         } else if (IsSign2(hand_landmarks_vec)) {
-                            start_time_ = std::chrono::steady_clock::now();
+                            start_timestamp_ = cc->InputTimestamp();
                         }
                     }
                 } else {
@@ -220,8 +221,8 @@ public:
                 recent_state_ = State::INITIAL;
             }
         } else if (recent_sign_ == SignStatus::SIGN3) {
-            auto now = std::chrono::steady_clock::now();
-            float duration = std::chrono::duration<float>(now - start_time_).count();
+            Timestamp now = cc->InputTimestamp();
+            float duration = (now - start_timestamp_).Milliseconds() / 1000.0f;
             if (recent_state_ == State::KEEPING) {
                 if (duration < min_keep_duration_s_threshold_) {
                     if (!cc->Inputs().Tag("LANDMARKS").IsEmpty()

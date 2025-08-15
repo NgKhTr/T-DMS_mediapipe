@@ -3,15 +3,14 @@
 
 namespace mediapipe {
 
-bool DurationProcess::CheckWithDuration(bool status, std::string verbose_label) {
-    auto now = std::chrono::steady_clock::now();
+bool DurationProcess::CheckWithDuration(bool status, Timestamp current_time, std::string verbose_label) {
     bool result = false;
     if (status) {
         if (!timer_started_) {
-            start_time_ = now;
+            start_time_ = current_time;
             timer_started_ = true;
         }
-        float closed_duration = std::chrono::duration<float>(now - start_time_).count();
+        float closed_duration = (current_time - start_time_).Milliseconds() / 1000.0f;
         if (closed_duration >= duration_s_threshold_) {
             result = true;
         }

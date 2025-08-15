@@ -3,6 +3,7 @@
 
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/port/logging.h"
+#include "mediapipe/framework/timestamp.h"
 #include "mediapipe/calculators/T-DMS/latency_calculator_options.pb.h"
 #include <chrono>
 #include <cmath>

@@ -6,6 +6,7 @@
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/calculators/T-DMS/all_eyes_closed_calculator_options.pb.h"
 #include "mediapipe/util/T-DMS/duration_process.h"
+#include "mediapipe/framework/timestamp.h"
 
 namespace mediapipe {
 
@@ -55,6 +56,7 @@ public:
 		return absl::OkStatus();
 	}
 	absl::Status Process(CalculatorContext* cc) override {
+		Timestamp current_timestamp = cc->InputTimestamp();
         bool left_eye_closed = false, right_eye_closed = false, any_eye_detected = false;
 
         if (!cc->Inputs().Tag("LEFT_EYE_CONTOUR_LANDMARKS").IsEmpty()) {
@@ -90,11 +92,11 @@ public:
 			}
         }
 		bool all_closed = any_eye_detected && (left_eye_closed && right_eye_closed);
-        bool result = CheckWithDuration(all_closed, (verbose_ ? "All eyes closed": ""));
+        bool result = CheckWithDuration(all_closed, current_timestamp, (verbose_ ? "All eyes closed": ""));
         if (verbose_) {
 			LOG(INFO) << "All eyes closed: " << all_closed << ", Result: " << result;
 		}
-        cc->Outputs().Tag("ALL_EYES_CLOSED").Add(new bool(result), cc->InputTimestamp());
+        cc->Outputs().Tag("ALL_EYES_CLOSED").Add(new bool(result), current_timestamp);
         return absl::OkStatus();
     }
 };

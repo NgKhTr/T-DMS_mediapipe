@@ -39,6 +39,7 @@ cc_library(
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_graph",
         "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/framework:timestamp",
     ],
     alwayslink = 1, 
     # must add

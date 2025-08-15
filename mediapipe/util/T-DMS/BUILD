@@ -5,5 +5,6 @@ cc_library (
     visibility = ["//visibility:public"],
     deps = [
         "//mediapipe/framework/port:logging",
+        "//mediapipe/framework:timestamp",
     ]
 )

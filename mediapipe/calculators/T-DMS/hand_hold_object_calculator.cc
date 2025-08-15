@@ -7,6 +7,7 @@
 #include "mediapipe/calculators/T-DMS/hand_hold_object_calculator_options.pb.h"
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/util/T-DMS/duration_process.h"
+#include "mediapipe/framework/timestamp.h"
 
 namespace mediapipe {
 
@@ -65,6 +66,7 @@ public:
         return absl::OkStatus();
     }
     absl::Status Process(CalculatorContext* cc) override {
+        Timestamp current_timestamp = cc->InputTimestamp();
         bool is_hold = false;
         if (!cc->Inputs().Tag("LANDMARKS").IsEmpty() && !cc->Inputs().Tag("DETECTIONS").IsEmpty()) {
 
@@ -74,11 +76,11 @@ public:
         }
 
         // bool result = processWithDuration(is_hold);
-        bool result = CheckWithDuration(is_hold, (verbose_ ? ("Hold " + label_ ): ""));
+        bool result = CheckWithDuration(is_hold, current_timestamp, (verbose_ ? ("Hold " + label_ ): ""));
         if (verbose_) {
             LOG(INFO) << "Hold " << label_ << ": " << is_hold << ", Result: " << result;
         }
-        cc->Outputs().Tag("HOLD").Add(new bool(result), cc->InputTimestamp());
+        cc->Outputs().Tag("HOLD").Add(new bool(result), current_timestamp);
         return absl::OkStatus();
     }
 };

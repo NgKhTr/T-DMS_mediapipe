@@ -6,6 +6,7 @@
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/calculators/T-DMS/yawn_calculator_options.pb.h"
 #include "mediapipe/util/T-DMS/duration_process.h"
+#include "mediapipe/framework/timestamp.h"
 
 namespace mediapipe {
 
@@ -53,6 +54,7 @@ public:
 		return absl::OkStatus();
 	}
 	absl::Status Process(CalculatorContext* cc) override {
+		Timestamp current_timestamp = cc->InputTimestamp();
 		bool mouth_open = false;
         if (!cc->Inputs().Tag("MULTI_LANDMARKS").IsEmpty()) {
             const auto& multi_landmarks = cc->Inputs().Tag("MULTI_LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
@@ -72,11 +74,11 @@ public:
 			}
 		}
 
-        bool result = CheckWithDuration(mouth_open, (verbose_ ? "Yawn": ""));
+        bool result = CheckWithDuration(mouth_open, current_timestamp, (verbose_ ? "Yawn": ""));
         if (verbose_) {
             LOG(INFO) << "Yawn: " << mouth_open << ", Result: " << result;
         }
-        cc->Outputs().Tag("YAWN").Add(new bool(result), cc->InputTimestamp());
+        cc->Outputs().Tag("YAWN").Add(new bool(result), current_timestamp);
         return absl::OkStatus();
     }
 };

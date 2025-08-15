@@ -3,16 +3,17 @@
 
 #include <chrono>
 #include <string>
+#include "mediapipe/framework/timestamp.h"
 
 namespace mediapipe {
 
 class DurationProcess {
 protected:
     float duration_s_threshold_; // Duration in seconds
-    std::chrono::steady_clock::time_point start_time_;
+    Timestamp start_time_;
     bool timer_started_;
 
-    bool CheckWithDuration(bool status, std::string verbose_label = "");
+    bool CheckWithDuration(bool status, Timestamp current_time, std::string verbose_label = "");
 };
 }
 #endif
