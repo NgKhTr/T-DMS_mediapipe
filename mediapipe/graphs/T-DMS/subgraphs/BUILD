@@ -47,15 +47,31 @@ mediapipe_simple_subgraph(
         "//mediapipe/modules/iris_landmark:iris_landmark_left_and_right_gpu"
     ]
 )
+
+
+mediapipe_simple_subgraph(
+    name = "iris_and_depth_renderer_gpu_subgraph",
+    graph = "iris_and_depth_renderer_gpu.pbtxt",
+    register_as = "IrisAndDepthRendererGpuSubgraph",
+    deps = [
+        "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # For DetectionsToRenderDataCalculatorOptions"
+        "//mediapipe/calculators/util:detections_to_render_data_calculator",
+        "//mediapipe/calculators/util:landmarks_to_render_data_calculator",
+        "//mediapipe/calculators/util:rect_to_render_data_calculator",
+        "//mediapipe/graphs/iris_tracking/calculators:iris_to_render_data_calculator",
+        "//mediapipe/graphs/face_mesh/calculators:face_landmarks_to_render_data_calculator",
+        "//mediapipe/graphs/iris_tracking/calculators:iris_to_depth_calculator",
+    ]
+)
 mediapipe_simple_subgraph(
     name = "iris_and_face_landmarks_render_subgraph",
     graph = "iris_and_face_landmarks_render.pbtxt",
     register_as = "IrisAndFaceLandmarkRenderSubgraph",
     deps = [
+        ":iris_and_depth_renderer_gpu_subgraph", # IrisAndDepthRendererGpu
         "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # For DetectionsToRenderDataCalculatorOptions"
         "//mediapipe/calculators/core:concatenate_proto_list_calculator", #ConcatenateNormalizedLandmarkListCalculator
         "//mediapipe/graphs/iris_tracking/calculators:update_face_landmarks_calculator", #UpdateFaceLandmarksCalculator
-        "//mediapipe/graphs/iris_tracking/subgraphs:iris_and_depth_renderer_gpu", # IrisAndDepthRendererGpu
     ]
 )
 mediapipe_simple_subgraph(
@@ -67,5 +83,17 @@ mediapipe_simple_subgraph(
         "//mediapipe/calculators/util:landmarks_to_render_data_calculator", # For LandmarksToRenderDataCalculator
         "//mediapipe/calculators/core:end_loop_calculator",   # For EndLoopRenderDataCalculator
         "//mediapipe/calculators/util:annotation_overlay_calculator", # For AnnotationOverlayCalculator
+    ]
+)
+mediapipe_simple_subgraph(
+    name = "biggest_face_landmark_front_gpu_subgraph",
+    graph = "biggest_face_landmark_front_gpu.pbtxt",
+    register_as = "BiggestFaceLandmarkFrontGpuSubgraph",
+    deps = [
+        "//mediapipe/modules/face_detection:face_detection_short_range_gpu", # For FaceDetectionShortRangeGpu
+        "//mediapipe/calculators/T-DMS:sort_detections_calculator", # For SortDetectionsCalculator
+        "//mediapipe/modules/face_landmark:face_detection_front_detection_to_roi",
+        "//mediapipe/modules/face_landmark:face_landmark_gpu",
+        "//mediapipe/calculators/image:image_properties_calculator",
     ]
 )

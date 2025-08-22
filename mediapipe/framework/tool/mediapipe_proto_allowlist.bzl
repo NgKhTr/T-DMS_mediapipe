@@ -334,4 +334,5 @@ rewrite_target_list = [
     "http_post_calculator_options_proto",
     "cooling_calculator_options_proto",
     "condition_calculator_options_proto",
+    "sort_detections_calculator_options_proto",
 ]

@@ -33,16 +33,16 @@ node: {
 }
 
 # Object detection
-node: {
-  calculator: "ObjectDetectionEfficientDetSubgraph"
-  input_stream: "IMAGE_GPU:input_frame_gpu"
-  output_stream: "DETECTIONS:detections"
-}
 # node: {
-#   calculator: "ObjectDetectionMobilenetV2Subgraph"
+#   calculator: "ObjectDetectionEfficientDetSubgraph"
 #   input_stream: "IMAGE_GPU:input_frame_gpu"
 #   output_stream: "DETECTIONS:detections"
 # }
+node: {
+  calculator: "ObjectDetectionMobilenetV2Subgraph"
+  input_stream: "IMAGE_GPU:input_frame_gpu"
+  output_stream: "DETECTIONS:detections"
+}
 node: {
   calculator: "ObjectDetectionRenderSubgraph"
   input_stream: "DETECTIONS:detections"
@@ -61,18 +61,25 @@ node: {
   }
 }
 node: {
-  calculator: "FaceLandmarkFrontGpu"
+  calculator: "BiggestFaceLandmarkFrontGpuSubgraph"
   input_stream: "IMAGE:input_frame_gpu"
-  input_side_packet: "NUM_FACES:num_faces"
-  output_stream: "LANDMARKS:multi_face_landmarks"
-  output_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks"
-  output_stream: "DETECTIONS:face_detections_iris"
-  output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections"
+  output_stream: "LANDMARKS:face_landmarks"
+  output_stream: "DETECTION:face_detection"
 }
+
+# node: {
+#   calculator: "FaceLandmarkFrontGpu"
+#   input_stream: "IMAGE:input_frame_gpu"
+#   input_side_packet: "NUM_FACES:num_faces"
+#   output_stream: "LANDMARKS:multi_face_landmarks"
+#   output_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks"
+#   output_stream: "DETECTIONS:face_detections_iris"
+#   output_stream: "ROIS_FROM_DETECTIONS:face_rects_from_detections" 
+# }
 # Yawn
 node: {
   calculator: "YawnCalculator"
-  input_stream: "MULTI_LANDMARKS:multi_face_landmarks"
+  input_stream: "LANDMARKS:face_landmarks"
   output_stream: "YAWN:yawn"
   node_options: {
     [type.googleapis.com/mediapipe.YawnCalculatorOptions]: {
@@ -83,18 +90,6 @@ node: {
   }
 }
 # Iris
-# Gets the very first and only face from "multi_face_landmarks" vector.
-node: {
-  calculator: "SplitNormalizedLandmarkListVectorCalculator"
-  input_stream: "multi_face_landmarks"
-  output_stream: "face_landmarks"
-  node_options: {
-    [type.googleapis.com/mediapipe.SplitVectorCalculatorOptions] {
-      ranges: { begin: 0 end: 1 }
-      element_only: true
-    }
-  }
-}
 node: {
   calculator: "IrisLandmarksSubgraph"
   input_stream: "FACE_LANDMARKS:face_landmarks"
@@ -110,15 +105,14 @@ node: {
 node: {
   calculator: "IrisAndFaceLandmarkRenderSubgraph"
   input_stream: "IMAGE_GPU:output_frame_gpu_0"
-  input_stream: "ROIS_FROM_LANDMARKS:face_rects_from_landmarks" #
-  input_stream: "MULTI_FACE_LANDMARKS:multi_face_landmarks" #
+  input_stream: "FACE_LANDMARKS:face_landmarks" #
   input_stream: "EYE_LANDMARKS_LEFT:left_eye_contour_landmarks" #
   input_stream: "EYE_LANDMARKS_RIGHT:right_eye_contour_landmarks" #
   input_stream: "IRIS_LANDMARKS_LEFT:left_iris_landmarks" #
   input_stream: "IRIS_LANDMARKS_RIGHT:right_iris_landmarks" #
   input_stream: "LEFT_EYE_RECT:left_eye_rect_from_landmarks" #
   input_stream: "RIGHT_EYE_RECT:right_eye_rect_from_landmarks" #
-  input_stream: "FACE_DETECTIONS:face_detections_iris"
+  input_stream: "FACE_DETECTION:face_detection"
   output_stream: "IMAGE_GPU:output_frame_gpu_1"
 }
 
@@ -192,7 +186,7 @@ node: {
     [type.googleapis.com/mediapipe.SOSHandSignCalculatorOptions]: {
       max_transform_duration_s_threshold: 0.5
       min_keep_duration_s_threshold: 0.3
-      verbose: true
+      verbose: false
     }
   }
 }
@@ -204,21 +198,8 @@ node: {
   output_stream: "HOLD:hand_hold_cell_phone"
   node_options: {
     [type.googleapis.com/mediapipe.HandHoldObjectCalculatorOptions]: {
-      duration_s_threshold: 1
+      duration_s_threshold: 0.5
       label: "smartphone"
-      verbose: false
-    }
-  }
-}
-node: {
-  calculator: "HandHoldObjectCalculator"
-  input_stream: "LANDMARKS:hand_landmarks"
-  input_stream: "DETECTIONS:detections"
-  output_stream: "HOLD:hand_hold_cup"
-  node_options: {
-    [type.googleapis.com/mediapipe.HandHoldObjectCalculatorOptions]: {
-      duration_s_threshold: 1
-      label: "cup"
       verbose: false
     }
   }
@@ -230,42 +211,37 @@ node: {
   output_stream: "HOLD:hand_hold_drink"
   node_options: {
     [type.googleapis.com/mediapipe.HandHoldObjectCalculatorOptions]: {
-      duration_s_threshold: 0.5
+      duration_s_threshold: 0.3
       label: "drink"
       verbose: false
     }
   }
 }
-# Threaten detection
-node: {
-  calculator: "FaceDetectionShortRangeGpu"
-  input_stream: "IMAGE:input_frame_gpu"
-  output_stream: "DETECTIONS:face_detections"
-}
 node: {
   calculator: "ThreatenCalculator"
   input_stream: "MULTI_HAND_LANDMARKS:hand_landmarks"
   input_stream: "OBJECT_DETECTIONS:detections"
-  input_stream: "FACE_DETECTIONS:face_detections"
+  # input_stream: "FACE_DETECTIONS:face_detections_iris"
+  input_stream: "FACE_DETECTION:face_detection"
   output_stream: "THREATEN:threaten"
-  output_stream: "FACE_MARGIN_DETECTIONS:face_margin_detections"
+  output_stream: "FACE_MARGIN_DETECTION:face_margin_detection"
   node_options: {
     [type.googleapis.com/mediapipe.ThreatenCalculatorOptions]: {
       labels: "scissors"
       labels: "knife"
       labels: "gun"
       verbose: true
-      face_margin_top_ratio: 1
-      face_margin_left_ratio: 0.5
-      face_margin_right_ratio: 0.5
+      face_margin_top_ratio: 0.5
+      face_margin_left_ratio: 1
+      face_margin_right_ratio: 1
       face_margin_bottom_ratio: 0.5
     }
   }
 }
 node: {
   calculator: "DetectionsToRenderDataCalculator"
-  input_stream: "DETECTIONS:face_margin_detections"
-  output_stream: "RENDER_DATA:face_margin_detections_render_data"
+  input_stream: "DETECTION:face_margin_detection"
+  output_stream: "RENDER_DATA:face_margin_detection_render_data"
   node_options: {
     [type.googleapis.com/mediapipe.DetectionsToRenderDataCalculatorOptions] {
       thickness: 4.0
@@ -276,7 +252,7 @@ node: {
 node: {
   calculator: "AnnotationOverlayCalculator"
   input_stream: "IMAGE_GPU:output_frame_gpu_2"
-  input_stream: "face_margin_detections_render_data"
+  input_stream: "face_margin_detection_render_data"
   input_stream: "gaze_render_data"
   output_stream: "IMAGE_GPU:output_frame_gpu_3"
 }
@@ -320,17 +296,6 @@ node: {
   node_options: {
     [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
       audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/using_smartphone_detected.wav"
-      play_duration_s: -1
-      cool_duration_s: 2
-    }
-  }
-}
-node: {
-  calculator: "AudioAlertCalculator"
-  input_stream: "TRIGGER:hand_hold_cup"
-  node_options: {
-    [type.googleapis.com/mediapipe.AudioAlertCalculatorOptions]: {
-      audio_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/alert_audio/holding_drink_detected.wav"
       play_duration_s: -1
       cool_duration_s: 2
     }
@@ -444,27 +409,28 @@ node: {
 #     }
 #   }
 # }
+
 node: {
   calculator: "ImageFrameToBase64StringCalculator"
   input_stream: "output_image_cpu_3"
   output_stream: "output_image_base64_3"
 }
-node: {
-  calculator: "MqttCalculator"
-  input_stream: "PAYLOAD_IMAGE:output_image_base64_3"
-  node_options: {
-    [type.googleapis.com/mediapipe.MqttCalculatorOptions] {
-      broker_address: "scity-dev.innovation.com.vn"
-      port: 1883
-      client_id: "aicamera"
-      username: "halow"
-      password: "halow"
-      telemetry_topic: "v1/devices/6587617b-9054-45da-b1f4-f4a8d460acd4/telemetry"
-      attribute_topic: "v1/devices/6587617b-9054-45da-b1f4-f4a8d460acd4/attribute"
-      verbose: true
-    }
-  }
-}
+# node: {
+#   calculator: "MqttCalculator"
+#   input_stream: "PAYLOAD_IMAGE:output_image_base64_3"
+#   node_options: {
+#     [type.googleapis.com/mediapipe.MqttCalculatorOptions] {
+#       broker_address: "scity-dev.innovation.com.vn"
+#       port: 1883
+#       client_id: "aicamera"
+#       username: "halow" 
+#       password: "halow"
+#       telemetry_topic: "v1/devices/6587617b-9054-45da-b1f4-f4a8d460acd4/telemetry"
+#       attribute_topic: "v1/devices/6587617b-9054-45da-b1f4-f4a8d460acd4/attribute"
+#       verbose: true
+#     }
+#   }
+# }
 node: {
   calculator: "LatencyCalculator"
   input_stream: "START_TIME:start_time"

@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message SortDetectionsCalculatorOptions {
+  enum Criteria {
+    SCORE = 0;
+    AREA = 1;
+  }
+  optional Criteria criteria = 1 [default = AREA];
+  optional bool ascend = 2 [default = true];
+}

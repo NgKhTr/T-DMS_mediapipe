@@ -367,3 +367,25 @@ cc_library(
     ],
     alwayslink = 1,
 )
+
+mediapipe_proto_library(
+    name = "sort_detections_calculator_options_proto",
+    srcs = ["sort_detections_calculator_options.proto"],
+)
+cc_library(
+    name = "sort_detections_calculator",
+    srcs = [
+        "sort_detections_calculator.cc",
+    ],
+    deps = [
+        ":sort_detections_calculator_options_cc_proto",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/util:color_cc_proto",
+        "//mediapipe/util:render_data_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto", # for landmark.pb.h
+    ],
+    alwayslink = 1,
+)

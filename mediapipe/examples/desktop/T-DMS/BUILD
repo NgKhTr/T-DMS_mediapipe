@@ -137,7 +137,8 @@ cc_binary(
         "//mediapipe/calculators/T-DMS:image_frame_to_base64_string_calculator",
         
         # Face
-        "//mediapipe/modules/face_landmark:face_landmark_front_gpu", # FaceLandmarkFrontCpu
+        # "//mediapipe/modules/face_landmark:face_landmark_front_gpu", # FaceLandmarkFrontCpu
+        "//mediapipe/graphs/T-DMS/subgraphs:biggest_face_landmark_front_gpu_subgraph",
         # For yawn
         "//mediapipe/calculators/T-DMS:yawn_calculator",
         # For iris

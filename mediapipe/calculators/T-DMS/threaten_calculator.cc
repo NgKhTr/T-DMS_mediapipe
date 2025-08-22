@@ -19,9 +19,8 @@ private:
     float face_margin_bottom_ratio_;
 
     bool IsObjectBeHolding(NormalizedLandmarkList hand_landmarks, Detection detection) {
-        if (detection.location_data().format() != LocationData::RELATIVE_BOUNDING_BOX) {
-            LOG(ERROR) << "Detection must be relative bounding box";
-        }
+        CHECK_EQ(detection.location_data().format(), LocationData::RELATIVE_BOUNDING_BOX)
+            << "Detection must be relative bounding box";
 
         const auto& bbox = detection.location_data().relative_bounding_box();
         float det_xmin = bbox.xmin();
@@ -38,46 +37,37 @@ private:
         }
         return false;
     }
-    std::vector<Detection> AddMarginToFaceDetections(const std::vector<Detection>& face_detections) {
-        std::vector<Detection> face_detections_margin_extend;
-        for (const Detection& face_detection: face_detections) {
-            if (face_detection.location_data().format() != LocationData::RELATIVE_BOUNDING_BOX) {
-                LOG(ERROR) << "Face detection must be relative bounding box";
-                continue;
-            }
+    Detection AddMarginToFaceDetections(const Detection& face_detection) {
+        CHECK_EQ(face_detection.location_data().format(), LocationData::RELATIVE_BOUNDING_BOX)
+            << "Face detection must be relative bounding box";
 
-            const auto& face_bbox = face_detection.location_data().relative_bounding_box();
+        const auto& face_bbox = face_detection.location_data().relative_bounding_box();
 
-            float face_xmin = face_bbox.xmin() - face_margin_left_ratio_ * face_bbox.width();
-            float face_ymin = face_bbox.ymin() - face_margin_top_ratio_ * face_bbox.height();
-            float face_width = face_bbox.width() + (face_margin_left_ratio_ + face_margin_right_ratio_) * face_bbox.width();
-            float face_height = face_bbox.height() + (face_margin_top_ratio_ + face_margin_bottom_ratio_) * face_bbox.height();
+        float face_xmin = face_bbox.xmin() - face_margin_left_ratio_ * face_bbox.width();
+        float face_ymin = face_bbox.ymin() - face_margin_top_ratio_ * face_bbox.height();
+        float face_width = face_bbox.width() + (face_margin_left_ratio_ + face_margin_right_ratio_) * face_bbox.width();
+        float face_height = face_bbox.height() + (face_margin_top_ratio_ + face_margin_bottom_ratio_) * face_bbox.height();
 
-            face_xmin = (face_xmin < 0 ? 0: face_xmin);
-            face_ymin = (face_ymin < 0 ? 0: face_ymin);
-            face_width = (face_xmin + face_width > 1 ? 1 - face_xmin: face_width);
-            face_height = (face_ymin + face_height > 1 ? 1 - face_ymin: face_height);
+        face_xmin = (face_xmin < 0 ? 0: face_xmin);
+        face_ymin = (face_ymin < 0 ? 0: face_ymin);
+        face_width = (face_xmin + face_width > 1 ? 1 - face_xmin: face_width);
+        face_height = (face_ymin + face_height > 1 ? 1 - face_ymin: face_height);
 
-            Detection face_detection_margin_extend;
-            auto* loc = face_detection_margin_extend.mutable_location_data();
-            loc->set_format(LocationData::RELATIVE_BOUNDING_BOX);
-            auto* margin_bbox = loc->mutable_relative_bounding_box();
-            margin_bbox->set_xmin(face_xmin);
-            margin_bbox->set_ymin(face_ymin);
-            margin_bbox->set_width(face_width);
-            margin_bbox->set_height(face_height);
+        Detection face_detection_margin_extend;
+        auto* loc = face_detection_margin_extend.mutable_location_data();
+        loc->set_format(LocationData::RELATIVE_BOUNDING_BOX);
+        auto* margin_bbox = loc->mutable_relative_bounding_box();
+        margin_bbox->set_xmin(face_xmin);
+        margin_bbox->set_ymin(face_ymin);
+        margin_bbox->set_width(face_width);
+        margin_bbox->set_height(face_height);
 
-            face_detections_margin_extend.push_back(face_detection_margin_extend);
-        }
-        return face_detections_margin_extend;
+        return face_detection_margin_extend;
     }
     bool Intersect(const Detection& object_detection_0, const Detection& object_detection_1) {
-        if (object_detection_0.location_data().format() != LocationData::RELATIVE_BOUNDING_BOX
-            || object_detection_0.location_data().format() != LocationData::RELATIVE_BOUNDING_BOX
-        ) {
-            LOG(ERROR) << "Detection must be relative bounding box";
-            return false;
-        }
+        CHECK(object_detection_0.location_data().format() == LocationData::RELATIVE_BOUNDING_BOX
+            && object_detection_0.location_data().format() == LocationData::RELATIVE_BOUNDING_BOX
+        ) << "Detection must be relative bounding box";
         const auto& obj_bbox_0 = object_detection_0.location_data().relative_bounding_box();
         const auto& obj_bbox_1 = object_detection_1.location_data().relative_bounding_box();
 
@@ -101,9 +91,9 @@ public:
     static absl::Status GetContract(CalculatorContract* cc) {
         cc->Inputs().Tag("MULTI_HAND_LANDMARKS").Set<std::vector<NormalizedLandmarkList>>();
         cc->Inputs().Tag("OBJECT_DETECTIONS").Set<std::vector<Detection>>();
-        cc->Inputs().Tag("FACE_DETECTIONS").Set<std::vector<Detection>>();
+        cc->Inputs().Tag("FACE_DETECTION").Set<Detection>();
         cc->Outputs().Tag("THREATEN").Set<bool>();
-        cc->Outputs().Tag("FACE_MARGIN_DETECTIONS").Set<std::vector<Detection>>();
+        cc->Outputs().Tag("FACE_MARGIN_DETECTION").Set<Detection>();
         return absl::OkStatus();
     }
     absl::Status Open(CalculatorContext* cc) override {
@@ -123,11 +113,11 @@ public:
         bool threaten = false;
         if (!cc->Inputs().Tag("MULTI_HAND_LANDMARKS").IsEmpty()
             && !cc->Inputs().Tag("OBJECT_DETECTIONS").IsEmpty()
-            && !cc->Inputs().Tag("FACE_DETECTIONS").IsEmpty()
+            && !cc->Inputs().Tag("FACE_DETECTION").IsEmpty()
         ) {
             const auto& hand_landmarks_vec = cc->Inputs().Tag("MULTI_HAND_LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
             const auto& object_detections = cc->Inputs().Tag("OBJECT_DETECTIONS").Get<std::vector<Detection>>();
-            const auto& face_detections_margin_extended = AddMarginToFaceDetections(cc->Inputs().Tag("FACE_DETECTIONS").Get<std::vector<Detection>>());
+            const auto& face_detection_margin_extended = AddMarginToFaceDetections(cc->Inputs().Tag("FACE_DETECTION").Get<Detection>());
             
             for (const Detection& object_detection: object_detections) {
                 bool is_threaten_object = false;
@@ -151,19 +141,15 @@ public:
                 if (!is_holding) {
                     continue;
                 }
+                
 
-                for (const Detection& face_detection_margin_extended: face_detections_margin_extended) {
-                    if (Intersect(face_detection_margin_extended, object_detection)) {
-                        threaten = true;
-                        break;
-                    }
-                }
-                if (threaten) {
+                if (Intersect(face_detection_margin_extended, object_detection)) {
+                    threaten = true;
                     break;
                 }
             }
             
-            cc->Outputs().Tag("FACE_MARGIN_DETECTIONS").Add(new std::vector<Detection>(face_detections_margin_extended), cc->InputTimestamp());
+            cc->Outputs().Tag("FACE_MARGIN_DETECTION").Add(new Detection(face_detection_margin_extended), cc->InputTimestamp());
         }
 
         if (verbose_) {

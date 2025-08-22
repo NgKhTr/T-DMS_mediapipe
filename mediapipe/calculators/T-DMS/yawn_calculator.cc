@@ -40,7 +40,7 @@ private:
 	}
 public:
 	static absl::Status GetContract(CalculatorContract* cc) {
-		cc->Inputs().Tag("MULTI_LANDMARKS").Set<std::vector<NormalizedLandmarkList>>();
+		cc->Inputs().Tag("LANDMARKS").Set<NormalizedLandmarkList>();
 		cc->Outputs().Tag("YAWN").Set<bool>();
 		return absl::OkStatus();
 	}
@@ -56,21 +56,16 @@ public:
 	absl::Status Process(CalculatorContext* cc) override {
 		Timestamp current_timestamp = cc->InputTimestamp();
 		bool mouth_open = false;
-        if (!cc->Inputs().Tag("MULTI_LANDMARKS").IsEmpty()) {
-            const auto& multi_landmarks = cc->Inputs().Tag("MULTI_LANDMARKS").Get<std::vector<NormalizedLandmarkList>>();
-			if (!multi_landmarks.empty()) {
-				for (const auto& landmarks: multi_landmarks) {
-					const float mar = ComputeMAR(landmarks);
-					if (verbose_) {
-						LOG(INFO) << "MAR: " << mar;
-					}
-					if (mar < 0) {
-						LOG(WARNING) << "Not enough landmarks to compute MAR";
-					} else if (mar > mar_threshold_) {
-						mouth_open = true;
-						break;
-					}
-				}
+        if (!cc->Inputs().Tag("LANDMARKS").IsEmpty()) {
+            const auto& landmarks = cc->Inputs().Tag("LANDMARKS").Get<NormalizedLandmarkList>();
+			const float mar = ComputeMAR(landmarks);
+			if (verbose_) {
+				LOG(INFO) << "MAR: " << mar;
+			}
+			if (mar < 0) {
+				LOG(WARNING) << "Not enough landmarks to compute MAR";
+			} else if (mar > mar_threshold_) {
+				mouth_open = true;
 			}
 		}
 

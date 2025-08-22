@@ -1,15 +1,14 @@
 # MediaPipe iris tracking rendering subgraph.
-
-type: "IrisAndDepthRendererGpu"
+# Reference: mediapipe/graphs/iris_tracking/subgraphs/iris_and_depth_renderer_gpu.pbtxt
+type: "IrisAndDepthRendererGpuSubgraph"
 
 input_stream: "IMAGE:input_image"
-input_stream: "DETECTIONS:detections"
+input_stream: "DETECTION:detection"
 input_stream: "FACE_LANDMARKS:face_landmarks"
 input_stream: "EYE_LANDMARKS_LEFT:all_left_eye_contour_landmarks"
 input_stream: "EYE_LANDMARKS_RIGHT:all_right_eye_contour_landmarks"
 input_stream: "IRIS_LANDMARKS_LEFT:left_iris_landmarks"
 input_stream: "IRIS_LANDMARKS_RIGHT:right_iris_landmarks"
-input_stream: "NORM_RECT:rect"
 input_stream: "LEFT_EYE_RECT:left_eye_rect_from_landmarks"
 input_stream: "RIGHT_EYE_RECT:right_eye_rect_from_landmarks"
 input_side_packet: "FOCAL_LENGTH:focal_length_pixel"
@@ -67,22 +66,10 @@ node {
   output_stream: "SIZE:image_size"
 }
 
-# Maps detection label IDs to the corresponding label text ("Face").
-node {
-  calculator: "DetectionLabelIdToTextCalculator"
-  input_stream: "detections"
-  output_stream: "labeled_detections"
-  node_options: {
-    [type.googleapis.com/mediapipe.DetectionLabelIdToTextCalculatorOptions] {
-      label: "Face"
-    }
-  }
-}
-
-# Converts detections to drawing primitives for annotation overlay.
+# Converts detection to drawing primitives for annotation overlay.
 node {
   calculator: "DetectionsToRenderDataCalculator"
-  input_stream: "DETECTIONS:labeled_detections"
+  input_stream: "DETECTION:detection"
   output_stream: "RENDER_DATA:detection_render_data"
   node_options: {
     [type.googleapis.com/mediapipe.DetectionsToRenderDataCalculatorOptions] {
@@ -183,18 +170,6 @@ node {
 }
 
 # Converts normalized rects to drawing primitives for annotation overlay.
-node {
-  calculator: "RectToRenderDataCalculator"
-  input_stream: "NORM_RECT:rect"
-  output_stream: "RENDER_DATA:rect_render_data"
-  node_options: {
-    [type.googleapis.com/mediapipe.RectToRenderDataCalculatorOptions] {
-      filled: false
-      color { r: 255 g: 0 b: 0 }
-      thickness: 4.0
-    }
-  }
-}
 
 node {
   calculator: "RectToRenderDataCalculator"
@@ -261,7 +236,6 @@ node {
   input_stream: "right_eye_contour_landmarks_render_data"
   input_stream: "left_eye_contour_landmarks_render_data"
   input_stream: "iris_render_data"
-  input_stream: "rect_render_data"
   input_stream: "left_eye_rect_render_data"
   input_stream: "right_eye_rect_render_data"
   output_stream: "IMAGE_GPU:output_image"
