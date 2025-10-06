@@ -17,7 +17,7 @@
 
 #include <chrono>
 #include <thread>
-
+#include <sstream>
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/absl_log.h"
@@ -34,7 +34,7 @@
 
 constexpr char kInputStream[] = "input_frame";
 constexpr char kOutputStream[] = "output_frame";
-constexpr char kWindowName[] = "MediaPipe";
+constexpr char kWindowName[] = "T-DMS";
 
 const auto warm_up_phase_duration = std::chrono::seconds(10);
 const auto stopped_phase_duration = std::chrono::seconds(2);
@@ -63,13 +63,21 @@ absl::Status RunMPPGraph() {
     mediapipe::CalculatorGraph graph;
     MP_RETURN_IF_ERROR(graph.Initialize(config));
 
+    // const int output_width = 1280, output_height = 720;
+    const int input_width = 1920, input_height = 1080;
+    const int output_width = 1920, output_height = 1080;
+    // const int output_width = 10000, output_height = 10720;
+
     ABSL_LOG(INFO) << "Initialize the camera or load the video.";
     cv::VideoCapture capture;
     const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
     if (load_video) {
         capture.open(absl::GetFlag(FLAGS_input_video_path));
     } else {
-        std::string pipeline = "v4l2src device=/dev/video0 ! image/jpeg,width=1280,height=720,framerate=30/1 ! jpegdec ! videoconvert ! appsink";
+        std::ostringstream pipeline_oss;
+        pipeline_oss << "v4l2src device=/dev/video0 ! image/jpeg,width=" << input_width
+                      << ",height=" << input_height << ",framerate=30/1 ! jpegdec ! videoconvert ! appsink";
+        std::string pipeline = pipeline_oss.str();
         capture.open(pipeline, cv::CAP_GSTREAMER);
     }
     RET_CHECK(capture.isOpened());
@@ -80,6 +88,16 @@ absl::Status RunMPPGraph() {
     int w = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_WIDTH));
 	int h = static_cast<int>(capture.get(cv::CAP_PROP_FRAME_HEIGHT));
 	double fps = capture.get(cv::CAP_PROP_FPS);
+
+    double scale = -1;
+    if (w > output_width || h > output_height) {
+        scale = std::min(
+            static_cast<double>(output_width) / w,
+            static_cast<double>(output_height) / h);
+        w = static_cast<int>(w * scale);
+        h = static_cast<int>(h * scale);
+    }
+
 	ABSL_LOG(INFO) << "Opened at " << w << "x" << h << " @" << fps << " FPS\n";
     if (save_video) {
         ABSL_LOG(INFO) << "Prepare video writer.";
@@ -88,7 +106,9 @@ absl::Status RunMPPGraph() {
                     fps, cv::Size(w, h));
         RET_CHECK(writer.isOpened());
     } else {
-        cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
+        // cv::namedWindow(kWindowName, /*flags=WINDOW_AUTOSIZE*/ 1);
+        cv::namedWindow(kWindowName, cv::WINDOW_NORMAL);
+        cv::setWindowProperty(kWindowName, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
     }
 
     std::shared_ptr<cv::Mat> latest_output_frame = std::make_shared<cv::Mat>();
@@ -147,8 +167,9 @@ absl::Status RunMPPGraph() {
 				end_phase_time = next_frame_time + stopped_phase_duration;
                 ABSL_LOG(INFO) << "Change phase to STOPPED.";
 				frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
-			}
-            cv::imwrite("/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/output.jpg", frame_raw);
+			} else if (scale > 0) {
+                cv::resize(frame_raw, frame_raw, cv::Size(), scale, scale, cv::INTER_AREA);
+            }
 		} else if (current_phase == Phase::STOPPED) {
 			frame_raw = cv::Mat(h, w, CV_8UC3, cv::Scalar(20, 20, 20));
 		}
