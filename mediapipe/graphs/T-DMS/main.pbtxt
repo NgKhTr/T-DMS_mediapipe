@@ -85,7 +85,7 @@ node: {
     [type.googleapis.com/mediapipe.YawnCalculatorOptions]: {
       mar_threshold: 0.85
       verbose: false
-      duration_s_threshold: 0.85
+      duration_s_threshold: 0.75
     }
   }
 }
@@ -471,7 +471,7 @@ node: {
       warning_color: { r: 255 g: 0 b: 0 }
       normal_color: { r: 0 g: 0 b: 255 }
       content_color: { r: 255 g: 255 b: 255 }
-      font_height: 0.02
+      font_height: 0.03
       normalized: true
       font_face: 1
       line_gap: 0.04

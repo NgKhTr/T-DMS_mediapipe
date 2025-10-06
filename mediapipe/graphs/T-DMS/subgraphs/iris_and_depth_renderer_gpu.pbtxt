@@ -231,13 +231,13 @@ node {
 node {
   calculator: "AnnotationOverlayCalculator"
   input_stream: "IMAGE_GPU:input_image"
-  input_stream: "detection_render_data"
+  # input_stream: "detection_render_data" # Render face detection box
   input_stream: "face_landmarks_render_data"
-  input_stream: "right_eye_contour_landmarks_render_data"
-  input_stream: "left_eye_contour_landmarks_render_data"
-  input_stream: "iris_render_data"
-  input_stream: "left_eye_rect_render_data"
-  input_stream: "right_eye_rect_render_data"
+  # input_stream: "right_eye_contour_landmarks_render_data"
+  # input_stream: "left_eye_contour_landmarks_render_data"
+  # input_stream: "iris_render_data"
+  # input_stream: "left_eye_rect_render_data"
+  # input_stream: "right_eye_rect_render_data"
   output_stream: "IMAGE_GPU:output_image"
   node_options: {
     [type.googleapis.com/mediapipe.AnnotationOverlayCalculatorOptions] {
