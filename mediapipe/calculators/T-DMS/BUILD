@@ -389,3 +389,60 @@ cc_library(
     ],
     alwayslink = 1,
 )
+
+mediapipe_proto_library(
+    name = "yolo_trt_calculator_options_proto",
+    srcs = ["yolo_trt_calculator_options.proto"],
+)
+# cc_library(
+#     name = "tensorrt",
+#     includes = [
+#         "/usr/local/cuda-12.6/targets/aarch64-linux/include",
+#     ],
+#     linkopts = [
+#         "-lnvinfer",        # TensorRT
+#         "-lnvonnxparser",   # ONNX parser
+#         "-lcudart",         # CUDA runtime
+#     ],
+# )
+# WORKSPACE (thêm đoạn này)
+
+cc_library(
+    name = "tensorrt",
+    deps = [
+        "@local_cuda//:cuda",         # <-- thêm dependency cho CUDA headers & linkopts
+    ],
+    linkopts = [
+        "-L/usr/local/cuda-12.6/targets/aarch64-linux/lib",
+        "-Wl,-rpath,/usr/local/cuda-12.6/targets/aarch64-linux/lib",
+        "-L/usr/lib/aarch64-linux-gnu",   # thư viện TensorRT location
+        "-lnvinfer",
+        "-lnvonnxparser",
+        # nếu cần thêm lib khác:
+        "-lcudart",
+    ],
+    includes = [
+        "/usr/include/aarch64-linux-gnu",   # path chứa NvInfer.h
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    name = "yolo_trt_calculator",
+    srcs = [
+        "yolo_trt_calculator.cc",
+    ],
+    deps = [
+        ":yolo_trt_calculator_options_cc_proto",
+        ":tensorrt",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework:calculator_graph",
+        "//mediapipe/calculators/core:pass_through_calculator",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/formats:image_frame_opencv",
+    ],
+    alwayslink = 1,
+)
+

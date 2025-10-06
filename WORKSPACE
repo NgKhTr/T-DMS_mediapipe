@@ -600,6 +600,21 @@ new_local_repository(
     build_file = "@//third_party:opencv_windows.BUILD",
     path = "C:\\opencv\\build",
 )
+# WORKSPACE (thêm đoạn sau)
+new_local_repository(
+    name = "local_cuda",
+    path = "/usr/local/cuda-12.6/targets/aarch64-linux",
+    build_file_content = """
+cc_library(
+    name = "cuda",
+    hdrs = glob(["include/**/*.h", "include/**/*.hpp"]),
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    linkopts = ["-Llib", "-lcudart"],
+)
+""",
+)
+
 
 http_archive(
     name = "android_opencv",

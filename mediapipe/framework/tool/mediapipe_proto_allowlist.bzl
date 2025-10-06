@@ -335,4 +335,5 @@ rewrite_target_list = [
     "cooling_calculator_options_proto",
     "condition_calculator_options_proto",
     "sort_detections_calculator_options_proto",
+    "yolo_trt_calculator_options_proto",
 ]

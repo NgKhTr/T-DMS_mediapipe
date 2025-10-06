@@ -97,3 +97,14 @@ mediapipe_simple_subgraph(
         "//mediapipe/calculators/image:image_properties_calculator",
     ]
 )
+mediapipe_simple_subgraph(
+    name = "object_detection_yolo_trt_subgraph",
+    graph = "object_detection_yolo_trt.pbtxt",
+    register_as = "ObjectDetectionYoloTRTSubgraph",
+    deps = [
+        "//mediapipe/graphs/object_detection:desktop_tflite_calculators", # For ImageTransformationCalculatorOptions
+        "//mediapipe/calculators/T-DMS:yolo_trt_calculator",
+        "//mediapipe/calculators/util:non_max_suppression_calculator",
+        "//mediapipe/calculators/util:detection_label_id_to_text_calculator",
+    ]
+)

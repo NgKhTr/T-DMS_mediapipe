@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package mediapipe;
+
+message YoloTRTCalculatorOptions {
+    required string model_onnx_path = 1;
+    required string model_engine_path = 2;
+    enum NetworkType {
+        fp32 = 0;
+        fp16 = 1;
+        int8 = 2;
+    }
+    required int32 num_classes = 3;
+    required NetworkType network_type = 4 [default = fp16];
+    required float min_score_thresh = 5 [default = 0.3];
+    required bool verbose = 6 [default = false];
+}

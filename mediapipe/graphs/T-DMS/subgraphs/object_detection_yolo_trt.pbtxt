@@ -1,0 +1,66 @@
+type: "ObjectDetectionYoloTRTSubgraph"
+
+input_stream: "IMAGE:input_image"
+output_stream: "DETECTIONS:output_detections"
+
+# Transforms the input image on GPU to a 640x640 image. To scale the image, by
+# default it uses the STRETCH scale mode that maps the entire input image to the
+# entire transformed image. As a result, image aspect ratio may be changed and
+# objects in the image may be deformed (stretched or squeezed)
+# !!! Maybe need using letter box for more accurate results !!!
+node: {
+  calculator: "ImageTransformationCalculator"
+  input_stream: "IMAGE:input_image"
+  output_stream: "IMAGE:transformed_image"
+  node_options: {
+    [type.googleapis.com/mediapipe.ImageTransformationCalculatorOptions] {
+      output_width: 640
+      output_height: 640
+    }
+  }
+}
+
+# Run YOLO object detection model with TensorRT
+node: {
+  calculator: "YoloTRTCalculator"
+  input_stream: "IMAGE:image_tensor"
+  output_stream: "DETECTIONS:detections"
+  node_options: {
+    [type.googleapis.com/mediapipe.YoloTRTCalculatorOptions] {
+      model_onnx_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/yolo11s.onnx"
+      model_engine_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/yolo11s.engine"
+      num_classes: 5
+      network_type: fp16
+      min_score_thresh: 0.3
+      verbose: true
+    }
+  }
+}
+
+# Performs non-max suppression to remove excessive detections.
+node: {
+  calculator: "NonMaxSuppressionCalculator"
+  input_stream: "detections"
+  output_stream: "filtered_detections"
+  node_options: {
+    [type.googleapis.com/mediapipe.NonMaxSuppressionCalculatorOptions] {
+      min_suppression_threshold: 0.5
+      min_score_threshold: 0.3
+      multiclass_nms: true
+    }
+  }
+}
+
+
+# Maps detection label IDs to the corresponding label text. The label map is
+# provided in the label_map_path option.
+node: {
+  calculator: "DetectionLabelIdToTextCalculator"
+  input_stream: "filtered_detections"
+  output_stream: "output_detections"
+  node_options: {
+    [type.googleapis.com/mediapipe.DetectionLabelIdToTextCalculatorOptions] {
+      label_map_path: "/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/labelmap.txt"
+    }
+  }
+}

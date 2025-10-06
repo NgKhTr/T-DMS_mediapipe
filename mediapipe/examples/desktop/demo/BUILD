@@ -165,16 +165,20 @@ cc_binary(
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_ssd_subgraph",
         "//mediapipe/graphs/T-DMS/subgraphs:object_detection_render_subgraph",
         "//mediapipe/calculators/core:split_vector_calculator", # For split vector of tensors
-        "//mediapipe/calculators/T-DMS:anchor_csv_side_packet_calculator",
+        "//mediapipe/calculators/T-DMS:anchor_side_packet_calculator",
+
+        "//mediapipe/graphs/T-DMS/subgraphs:object_detection_yolo_trt_subgraph",
         # Hand
-        "//mediapipe/modules/palm_detection:palm_detection_gpu",
-        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_gpu",
-        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_gpu",
+        "//mediapipe/modules/palm_detection:palm_detection_cpu",
+        "//mediapipe/modules/hand_landmark:hand_landmark_tracking_cpu",
+        "//mediapipe/graphs/hand_tracking/subgraphs:hand_renderer_cpu",
 
         "//mediapipe/calculators/demo:hand_landmarks_to_render_data_calculator", # Hand holding phone detection
         # Latency
         "//mediapipe/calculators/T-DMS:latency_calculator",
         "//mediapipe/calculators/T-DMS:start_latency_calculator",
+
+        
     ]
 )
 cc_binary(
