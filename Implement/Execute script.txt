@@ -1,0 +1,455 @@
+Task:
+	Add image to GPU in graph instead of converting outside graph
+	Try another object detection model
+		What is the recent model
+	Run with recent object detection model	[Done]
+		Try mediapipe/tasks/cc/vision/object_detector/object_detector_graph.cc => [Hold]
+		Try TFliteInferenceCalculator => TfLiteTensorsToDetectionsCalculator and make Detection from it's output => [Successful => Adjust n intergrate something => Done]
+			Need modifying downloads for auto download from build:
+				/home/nextwave/Desktop/T-DMS/Models/efficientdet_lite0_fp16_no_nms_anchors.csv
+				/home/nextwave/Desktop/T-DMS/Models/efficientdet_lite0.tflite
+				/home/nextwave/Desktop/T-DMS/Models/efficientdet_lite0_labels.txt
+				
+				labels.txt is diffent from download label, labelmap ???, efficientdet.json ???
+					> https://storage.googleapis.com/mediapipe-assets/FILE_NAME?generation=GENERATION
+					labels.txt| https://storage.googleapis.com/mediapipe-assets/labels.txt?generation=1667892497527642
+						=> Label for languague processing
+					labelmap.txt| https://storage.googleapis.com/mediapipe-tasks/object_detector/labelmap.txt [Solved]
+						=> Use this in third_party/external_files.bzl
+					efficientdet_lite0_fp16_no_nms.json| https://storage.googleapis.com/mediapipe-assets/efficientdet_lite0_fp16_no_nms.json?generation=1682456092938505
+						=> Has all config: parameter, anchor
+					efficientdet_lite0_v1.json| https://storage.googleapis.com/mediapipe-assets/efficientdet_lite0_v1.json?generation=1682541115974821
+						
+		
+			Don't know the option parameter of mediapipe/calculators/tflite/tflite_tensors_to_detections_calculator.proto => [Solved]
+				Use origin but change config to see is it valid [Done] => No think make it error
+				Check in mediapipe/tasks/cc/components/processors/detection_postprocessing_graph_test.cc [Solved]
+					Know the orther of anchor csv file: "box_format: YXHW"
+				
+			Check: std::vector<TfLiteTensor, std::allocator<TfLiteTensor>> => [Solved]
+				SplitTfLiteTensorVectorCalculator
+				typedef ConcatenateVectorCalculator<::tflite::gpu::gl::GlBuffer>
+					    ConcatenateGlBufferVectorCalculator;
+					MEDIAPIPE_REGISTER_NODE(ConcatenateGlBufferVectorCalculator);
+				typedef ConcatenateVectorCalculator<TfLiteTensor>
+				    ConcatenateTfLiteTensorVectorCalculator;
+				MEDIAPIPE_REGISTER_NODE(ConcatenateTfLiteTensorVectorCalculator);
+
+				typedef ConcatenateVectorCalculator<Tensor> ConcatenateTensorVectorCalculator;
+				MEDIAPIPE_REGISTER_NODE(ConcatenateTensorVectorCalculator);
+			
+			Use ok but it need anchor: just use the tempt anchor or SSD => There are a hint that it perform detect but it just hint, no detection => [Solved]
+				> The wrong anchor csv reader order
+			
+			Why downloaded ssd get error ? => [Don't know]
+			
+			Run object detection EfficientNet with recent anchor => [Done]
+			
+			Run with GPU [Done]
+				Config customised graph for easy debgu []
+				Consider using mediapipe/calculators/core/split_vector_calculator.cc for solving bug
+			
+			Maybe need normalized image base on the json file => [Done]
+	Yawning detection
+			
+=========
+
+
+
+Error:
+
+In file included from mediapipe/examples/desktop/demo_run_graph_main_gpu.cc:28:
+./mediapipe/framework/port/opencv_video_inc.h:88:10: fatal error: opencv2/optflow.hpp: No such file or directory
+   88 | #include <opencv2/optflow.hpp>
+      |          ^~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+
+Please help me solve this problem
+
+
+we
+
+
+
+
+
+
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D OPENCV_EXTRA_MODULES_PATH=~/Desktop/T-DMS/OpenCV_installation/opencv_contrib/modules \
+      -D OPENCV_GENERATE_PKGCONFIG=ON \
+      -D WITH_GTK=ON \
+      -D WITH_CUDA=ON \
+      -D WITH_CUDNN=ON \
+      -D WITH_GSTREAMER=ON \
+      
+      -D WITH_LIBV4L=ON \
+      -D OPENCV_DNN_CUDA=ON \
+      -D ENABLE_NEON=ON \
+      -D CUDA_ARCH_BIN=8.7 \
+      -D BUILD_opencv_python3=ON \
+      -D BUILD_opencv_python2=OFF \
+      -D PYTHON3_EXECUTABLE=/usr/bin/python3.10 \
+      -D BUILD_EXAMPLES=OFF ..
+      
+      -D WITH_FFMPEG=ON \
+      
+            -D WITH_OPENGL=ON \
+      
+      
+      /home/nextwave/Desktop/T-DMS/OpenCV_installation/opencv_contrib/modules/cudev/include/opencv2/cudev/grid/detail/reduce.hpp(379): error: no instance of overloaded function "cv::cudev::blockReduce" matches the argument list
+
+      
+      
+      
+what about GUI NO, is OpenGL neccesary?
+
+
+bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:object_detection_tensorflow_demo
+
+
+
+
+I not using bezel
+My WORKSPACE file have this code:
+new_local_repository(
+    name = "linux_opencv",
+    build_file = "@//third_party:opencv_linux.BUILD",
+    path = "/usr/local",
+)
+
+licenses(["notice"])  # BSD license
+
+exports_files(["LICENSE"])
+
+cc_library(
+    name = "opencv",
+    hdrs = glob([
+        "include/opencv4/opencv2/**/*.h*",
+    ]),
+    includes = [
+        "include/opencv4/",
+    ],
+    linkopts = [
+        "-l:libopencv_core.so",
+        "-l:libopencv_calib3d.so",
+        "-l:libopencv_features2d.so",
+        "-l:libopencv_highgui.so",
+        "-l:libopencv_imgcodecs.so",
+        "-l:libopencv_imgproc.so",
+        "-l:libopencv_video.so",
+        "-l:libopencv_videoio.so",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
+"/usr/local/include/opencv4/opencv2/**/*.h*" is correct. 
+However files are now in /usr/local/lib:
+"libopencv_core.so", "libopencv_calib3d.so", "libopencv_features2d.so", "libopencv_highgui.so", "libopencv_imgcodecs.so","libopencv_imgproc.so","libopencv_video.so","libopencv_videoio.so",
+How would I adjust this code session for my recent status
+
+
+
+I like -l:libopencv_core.so form but -Wl,-rpath,/usr/local/lib too long. Could make it short like -l: form
+
+
+My command: dpkg -l | grep opencv
+Dont show anything. What need to do?
+
+
+
+
+After I apply your instruction, I build bazel again and got error:
+/usr/bin/ld.gold: error: cannot find libopencv_core.so
+/usr/bin/ld.gold: error: cannot find libopencv_calib3d.so
+/usr/bin/ld.gold: error: cannot find libopencv_features2d.so
+/usr/bin/ld.gold: error: cannot find libopencv_highgui.so
+/usr/bin/ld.gold: error: cannot find libopencv_imgcodecs.so
+/usr/bin/ld.gold: error: cannot find libopencv_imgproc.so
+/usr/bin/ld.gold: error: cannot find libopencv_video.so
+/usr/bin/ld.gold: error: cannot find libopencv_videoio.so
+Is it because I dont clear cache?
+
+
+
+echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/opencv.conf
+sudo ldconfig
+
+Help me in using mediapipe in C++ framework. I want to build a real time app in jetson nano:
+- It detects face, eyes, hand and object from recent frame of camera.
+- Draw landmark of face, eyes, hand and bounding box of detected objects.
+Could you guide me how to intergrate some logic in this app:
+- When cell phone is hold by hand: bonding box of cellphone from detection module intersects with hand lanmark or hand bounding box, app prints "alert" to console
+At the recent, I have set up mediapipe and run it completely. I have install bazel, clone mediapipe repository, solve all conflict and sastified all requirements. So I have run succesfully the availables example in this repository.
+So please make code for me for this solution I proposed. I belive you can do that without any error.
+
+==^^^^ need update session
+>> Object detection
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop:demo_run_graph_main_gpu
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo_run_graph_main_gpu --calculator_graph_config_file=mediapipe/graphs/object_detection/object_detection_mobile_gpu.pbtxt
+>> H0and tracking
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop:demo_run_graph_main_gpu
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo_run_graph_main_gpu --calculator_graph_config_file=mediapipe/graphs/object_detection/object_detection_mobile_gpu.pbtxt
+
+
+/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/mediapipe/examples/desktop/hand_tracking/BUILD
+
+
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/object_detection/object_detection_tflite \
+  --calculator_graph_config_file=mediapipe/graphs/object_detection/object_detection_desktop_tflite_graph.pbtxt \
+  --input_side_packets=input_video_path=/home/nextwave/Desktop/T-DMS/DemoVideos/drink3_1.mp4,output_video_path=/home/nextwave/Desktop/T-DMS/drink3_1.mp4
+
+--input_video_path=/home/nextwave/Desktop/T-DMS/DemoVideos/drink3_1.mp4 \
+--output_video_path=/home/nextwave/Desktop/T-DMS/drink3_1.mp4
+>> CPU
+GLOG_v=3 GLOG_logtostderr=0 GLOG_log_dir=Logs bazel-bin/mediapipe/examples/desktop/T-DMS/main_cpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/main_cpu_gpu.pbtxt
+
+>> CPU GPU Now
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop/T-DMS:main_cpu
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/main_cpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/main.pbtxt \
+--input_video_path="/home/nextwave/Desktop/T-DMS/DemoVideos/VideosInCar/drink3_2.mp4"
+/home/nextwave/Desktop/T-DMS/DemoVideos/VideosInCar/drink3_2.mp4
+
+
+
+/home/nextwave/Desktop/T-DMS/DemoVideos/drink3_1.mp4 \
+--output_video_path=/home/nextwave/Desktop/T-DMS/drink3_1.mp4
+
+
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop/T-DMS:main
+
+bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/object_detection:object_detection_tflite
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/main --calculator_graph_config_file=mediapipe/graphs/T-DMS/main.pbtxt
+GLOG_v=3 GLOG_logtostderr=0 GLOG_log_dir=Logs bazel-bin/mediapipe/examples/desktop/T-DMS/main --calculator_graph_config_file=mediapipe/graphs/T-DMS/main.pbtxt
+GLOG_v=3 GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/main --calculator_graph_config_file=mediapipe/graphs/T-DMS/main.pbtxt
+
+
+Create temporary Face and Eye landmark first because have available map
+	How to check ??
+Need hand pose
+
+
+Attach hand
+Take palm for easy first
+draw for me iris and face
+
+/home/nextwave/Desktop/T-DMS/face_image.jpg
+
+
+
+
+
+bazel run //mediapipe/examples/desktop/T-DMS:main_gpu --calculator_graph_config_file=your_graph.pbtxt \
+  --input_image_path=your_input.jpg \
+  --output_image_path=your_output.jpg
+
+bazel run //mediapipe/examples/desktop/T-DMS:main_gpu -- \
+  --calculator_graph_config_file=your_graph.pbtxt \
+  --input_image_path=your_input.jpg \
+  --output_image_path=your_output.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/eye_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image.jpg   --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_res.jpg
+
+
+
+
+
+/home/nextwave/288373-person-human-female-girl-face-eyes-closed-wind.jpg
+
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop/demo:image_gpu
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/eye_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image.jpg   --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_res.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/eye_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image_4k.jpg   --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_4k_res.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/eye_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image_4k_1.jpeg   --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_4k_1_res.jpeg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/eye_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image_close_eye.jpg   --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_close_eye.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/eye_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image_close_eye.jpg   --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_close_eye.jpg
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/image_gpu --calculator_graph_config_file=mediapipe/graphs/T-DMS/hand_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/hand_image.jpg   --output_image_path=/home/nextwave/Desktop/T-DMS/hand_image_res.jpg
+
+
+
+
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop/demo:image_cpu
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/object_detection_yolo_trt_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/Hands.jpg --output_image_path=/home/nextwave/Desktop/T-DMS/multipalms.jpg
+
+
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/palm_detection_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/Hands.jpg --output_image_path=/home/nextwave/Desktop/T-DMS/multipalms.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/hand_tracking/hand_tracking_desktop_live.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/T-DMS_mediapipe/Hands.jpg --output_image_path=/home/nextwave/Desktop/T-DMS/multipalms.jpg
+
+
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/palm_detection_visualization.pbtxt --input_image_path=/home/nextwave/Downloads/multipalms.jpeg   --output_image_path=/home/nextwave/Desktop/T-DMS/multipalms.jpg
+
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop/T-DMS:image
+
+/home/nextwave/Downloads/alert.wav
+
+bazel build mediapipe/examples/desktop/demo_app:demo_play_audio
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo_app/demo_play_audio
+
+
+	
+/home/nextwave/Desktop/T-DMS/efficientdet_lite0.tflite
+
+	Just forward first
+
+	
+	
+
+bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo_app:demo_object_detection_infer_calculator
+GLOG_logtostderr=1 GLOG_log_dir=Logs bazel-bin/mediapipe/examples/desktop/demo_app/demo_object_detection_infer_calculator --calculator_graph_config_file=mediapipe/graphs/T-DMS/customised_object_detection.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/cellphone.jpg
+
+
+GLOG_v=5 GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo_app/demo_object_detection --calculator_graph_config_file=mediapipe/graphs/T-DMS/customised_object_detection.pbtxt --input_image=/home/nextwave/Desktop/T-DMS/cell_phone.jpg output_image=/home/nextwave/Desktop/T-DMS/cell_phone_res.jpg
+
+
+bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:object_detection_infer_calculator_gpu
+
+bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:image_cpu
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/object_detection_efficient_det_cpu.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/cellphone.jpg --output_image_path=output_result.jpg
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/face_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image_4x.png --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_4x_res.png
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/face_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_yawning_8x.png --output_image_path=/home/nextwave/Desktop/T-DMS/face_yawning_8x.png
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/face_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_yawning.jpg --output_image_path=/home/nextwave/Desktop/T-DMS/face_yawning_res.jpg
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_gpu --calculator_graph_config_file=mediapipe/graphs/demo/object_detection_efficient_det_gpu.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image.jpg --output_image_path=/home/nextwave/Desktop/T-DMS/face_image_res.jpg
+
+
+
+bazel build -c opt --copt -DMESA_EGL_NO_X11_HEADERS --copt -DEGL_NO_X11 mediapipe/examples/desktop/demo:image_gpu
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_gpu --calculator_graph_config_file=mediapipe/graphs/demo/object_detection_efficient_det_gpu.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/cellphone.jpg --output_image_path=output_result.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_gpu --calculator_graph_config_file=mediapipe/graphs/demo/iris_landmarks_index_visualization.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/face_image_4x.png --output_image_path=output_result.jpg
+
+
+
+https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite
+https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/latest/efficientdet_lite0.tflite
+https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/latest/efficientdet_lite0.tflite
+
+
+
+GLOG_v=5 GLOG_logtostderr=0 GLOG_log_dir=Logs bazel-bin/mediapipe/examples/desktop/demo/image_gpu --calculator_graph_config_file=mediapipe/graphs/demo/object_detection_efficient_det_gpu.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/cellphone.jpg --output_image_path=output_result.jpg
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/demo/image_cpu --calculator_graph_config_file=mediapipe/graphs/demo/object_detection_efficient_det_cpu.pbtxt --input_image_path=/home/nextwave/Desktop/T-DMS/gun.jpg --output_image_path=/home/nextwave/Desktop/T-DMS/gun_res.jpg
+
+
+Gaze Direction calculator
+	Output ???
+		Could render by AnnotationOverlayCalculator
+		AnnotationOverlayCalculator could add multiple RenderData in 1 calculator?
+			
+			message Arrow {
+				// The arrow head will be drawn at (x_end, y_end).
+				optional double x_start = 1;
+				optional double y_start = 2;
+				optional double x_end = 3;
+				optional double y_end = 4;
+				optional bool normalized = 5 [default = false];
+			}
+	Read code ???
+		Get this source yet ???
+		
+Add proto file process
+	mediapipe_proto_library: must have _proto in the end of name
+		mediapipe_proto_library(
+		    name = "face_landmarks_detector_graph_options_proto",
+		    srcs = ["face_landmarks_detector_graph_options.proto"],
+		    deps = [
+			":face_blendshapes_graph_options_proto",
+			"//mediapipe/framework:calculator_options_proto",
+			"//mediapipe/framework:calculator_proto",
+			"//mediapipe/tasks/cc/core/proto:base_options_proto",
+		    ],
+		)
+	Add name to: mediapipe/framework/tool/mediapipe_proto_allowlist.bzl
+	Add to cc_library / cc_binary with cc before _proto: ...:face_landmarks_detector_graph_options_cc_proto
+
+Image to base64 calculator
+MQTT interaction
+	Option as parameter
+	Set input as parameter
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/main --calculator_graph_config_file=mediapipe/graphs/T-DMS/main.pbtxt \
+--input_video_path=/home/nextwave/Desktop/T-DMS/DemoVideos/PhoneUsage1_1.mp4
+
+
+
+
+GLOG_logtostderr=1 bazel-bin/mediapipe/examples/desktop/T-DMS/main --calculator_graph_config_file=mediapipe/graphs/T-DMS/main.pbtxt \
+--input_video_path=/home/nextwave/Desktop/T-DMS/DemoVideos/drink3_1.mp4 \
+--output_video_path=/home/nextwave/Desktop/T-DMS/drink3_1.mp4
+
+
+
+/home/nextwave/Sleep_SOS_Threaten.mp4 
+Sleep_SOS_Threaten.mp4
+
+
+--output_video_path=/home/nextwave/Desktop/T-DMS/ResultVideos/Sos1_1.mp4
+		
+Hey, writer.write(output_frame_mat); does this write with fps, mean that when I wait for 10min and call writer.write(output_frame_mat); it write next frame?
+		
+Combine run in CPU instead of GPU
+Possible error for dumping:
+	[Nope => Gstream only apply for camera] - Run GStreamer instead of normal 
+	[Maybe] - Apply rendering callback 
+	[Check] - HttpPostCalculator: error when closing
+	
+	Hey, write for me sort detections calculator with customise criteria
+	
+	
+	
+	
+	
+Deepstream install:
+sudo apt install libssl3
+sudo apt install libssl-dev
+sudo apt install libgstreamer1.0-0
+sudo apt install gstreamer1.0-tools
+sudo apt install gstreamer1.0-plugins-good
+sudo apt install gstreamer1.0-plugins-bad
+sudo apt install gstreamer1.0-plugins-ugly
+sudo apt install gstreamer1.0-libav
+sudo apt install libgstreamer-plugins-base1.0-dev
+sudo apt install libgstrtspserver-1.0-0
+sudo apt install libjansson4
+sudo apt install libyaml-cpp-dev
+sudo apt install libmosquitto1
+
+
+
+sudo mkdir -p /etc/apt/keyrings
+
+wget -qO - https://packages.confluent.io/deb/8.0/archive.key | gpg \
+--dearmor | sudo tee /etc/apt/keyrings/confluent.gpg > /dev/null
+
+
+CP_DIST=$(lsb_release -cs)
+echo "Types: deb
+URIs: https://packages.confluent.io/deb/8.0
+Suites: stable
+Components: main
+Architectures: $(dpkg --print-architecture)
+Signed-by: /etc/apt/keyrings/confluent.gpg
+
+Types: deb
+URIs: https://packages.confluent.io/clients/deb/
+Suites: ${CP_DIST}
+Components: main
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/confluent.gpg" | sudo tee /etc/apt/sources.list.d/confluent-platform.sources > /dev/null
+
+sudo apt-get update && sudo apt-get install confluent-platform
+
+
+
+wget --content-disposition 'https://api.ngc.nvidia.com/v2/resources/org/nvidia/deepstream/7.1/files?redirect=true&path=deepstream-7.1_7.1.0-1_arm64.deb' --output-document 'deepstream-7.1_7.1.0-1_arm64.deb'
